@@ -307,8 +307,8 @@ term:
 			if($2->type!=boolexpr_e){
 				$2->trueList = createTrueList(nextquadlabel());
 				$2->falseList= createFalseList(nextquadlabel());  
-				emit(if_eq, $2->falseList, $2, newexpr_constbool(1), currQuad, yylineno);
-				emit(jump, $2->trueList, NULL, NULL, currQuad, yylineno);
+				emit(if_eq, $2->falseList, $2, newexpr_constbool(1), currQuad+2, yylineno);
+				emit(jump, $2->trueList, NULL, NULL, currQuad+1, yylineno);
 			}
 			$$->trueList = $2->falseList; 
 			$$->falseList = $2->trueList; 
