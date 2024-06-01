@@ -3051,13 +3051,14 @@ int main(int argc, char **argv){
   }
   
   if(argc > 1){
-		if(!(yyin = fopen(argv[1], "r"))){
-			fprintf(stdout, "Cannot read file: %s\n", argv[1]);
-			return 1;
-		}
-	else
-		yyin = stdin;
+    yyin = fopen(argv[1], "r");
+    if(!yyin){
+      fprintf(stdout, "Cannot read file: %s\n", argv[1]);
+      return 1;
+    }
   }
+  else 
+    yyin = stdin; 
 
 	yyparse();
   
