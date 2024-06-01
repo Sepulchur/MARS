@@ -597,7 +597,7 @@ static const yytype_uint16 yyrline[] =
      626,   640,   646,   662,   671,   670,   682,   701,   702,   681,
      731,   743,   744,   730,   761,   762,   763,   764,   765,   766,
      769,   770,   804,   840,   842,   845,   861,   865,   873,   881,
-     888,   906,   920,   930,   929,   950,   949,   962,   961
+     888,   906,   920,   936,   935,   958,   957,   970,   969
 };
 #endif
 
@@ -1623,7 +1623,7 @@ yyreduce:
   case 10:
 #line 151 "parse.y" /* yacc.c:1646  */
     {
-
+      
     }
 #line 1629 "parse.c" /* yacc.c:1646  */
     break;
@@ -1631,7 +1631,7 @@ yyreduce:
   case 11:
 #line 155 "parse.y" /* yacc.c:1646  */
     {
-      if(!loopcounter){yyerror("Use of 'return' while not in a loop");}
+      if(!loopcounter){yyerror("Use of 'continue' while not in a loop");}
     }
 #line 1637 "parse.c" /* yacc.c:1646  */
     break;
@@ -1911,7 +1911,7 @@ yyreduce:
       if((yyvsp[0].enode)->type == tableitem_e){
         (yyval.enode) = emit_iftableitem((yyvsp[0].enode),table,yylineno);
         emit(add, (yyval.enode), (yyval.enode), newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, (yyval.enode), (yyvsp[0].enode), (yyvsp[0].enode)->index, currQuad, yylineno);
+        emit(tablesetelem, (yyvsp[0].enode), (yyvsp[0].enode)->index,(yyval.enode), currQuad, yylineno);
       }
       else{
         emit(add, (yyvsp[0].enode), (yyvsp[0].enode), newexpr_constnum(1), currQuad, yylineno);
@@ -1936,7 +1936,7 @@ yyreduce:
         expr * value = emit_iftableitem((yyvsp[-1].enode),table,yylineno);
         emit(assign, (yyval.enode), value, NULL, currQuad, yylineno);
         emit(add, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, (yyvsp[-1].enode), (yyvsp[-1].enode)->index, currQuad, yylineno);
+        emit(tablesetelem, (yyvsp[-1].enode), (yyvsp[-1].enode)->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, (yyval.enode), (yyvsp[-1].enode), NULL, currQuad, yylineno);
@@ -1956,7 +1956,7 @@ yyreduce:
       if((yyvsp[0].enode)->type == tableitem_e){
         (yyval.enode) = emit_iftableitem((yyvsp[0].enode),table,yylineno);
         emit(sub, (yyval.enode), (yyval.enode), newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, (yyval.enode), (yyvsp[0].enode), (yyvsp[0].enode)->index, currQuad, yylineno);
+        emit(tablesetelem, (yyvsp[0].enode), (yyvsp[0].enode)->index,(yyval.enode), currQuad, yylineno);
       }
       else{
         emit(sub, (yyvsp[0].enode), (yyvsp[0].enode), newexpr_constnum(1), currQuad, yylineno);
@@ -1980,7 +1980,7 @@ yyreduce:
         expr * value = emit_iftableitem((yyvsp[-1].enode),table,yylineno);
         emit(assign, (yyval.enode), value, NULL, currQuad, yylineno);
         emit(sub, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, (yyvsp[-1].enode), (yyvsp[-1].enode)->index, currQuad, yylineno);
+        emit(tablesetelem, (yyvsp[-1].enode), (yyvsp[-1].enode)->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, (yyval.enode), (yyvsp[-1].enode), NULL, currQuad, yylineno);
@@ -2716,25 +2716,31 @@ yyreduce:
   case 102:
 #line 921 "parse.y" /* yacc.c:1646  */
     {
+      emits = 0;
+      backPatch((yyvsp[-1].enode)->falseList, nextquadlabel()+2);
+      emit(assign, (yyvsp[-1].enode), newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, (yyvsp[-1].enode), newexpr_constbool(0), NULL, currQuad, yylineno); 
+
       (yyval.intVal) = nextquadlabel();
       test = (yyvsp[-2].intVal);
 			emit(if_eq, newexpr_constnum(1), (yyvsp[-1].enode), newexpr_constbool('1'), currQuad, yylineno);
 		}
-#line 2724 "parse.c" /* yacc.c:1646  */
+#line 2730 "parse.c" /* yacc.c:1646  */
     break;
 
   case 103:
-#line 930 "parse.y" /* yacc.c:1646  */
+#line 936 "parse.y" /* yacc.c:1646  */
     { 
       ++loopcounter;
 			push(breakstacklist, 0);
       push(contstacklist, 0); 
 		}
-#line 2734 "parse.c" /* yacc.c:1646  */
+#line 2740 "parse.c" /* yacc.c:1646  */
     break;
 
   case 104:
-#line 936 "parse.y" /* yacc.c:1646  */
+#line 942 "parse.y" /* yacc.c:1646  */
     {
 			--loopcounter; 
 			patchlabel((yyvsp[-7].intVal), (yyvsp[-2].intVal)+1);
@@ -2743,53 +2749,55 @@ yyreduce:
 			patchlabel((yyvsp[0].intVal), (yyvsp[-6].intVal)+1);
 
 			patchBreakContinue(breakstacklist, nextquadlabel());
+      //pop(breakstacklist);
 			patchBreakContinue(contstacklist, (yyvsp[-6].intVal)+1);
+      //pop(contstacklist);
 		}
-#line 2749 "parse.c" /* yacc.c:1646  */
+#line 2757 "parse.c" /* yacc.c:1646  */
     break;
 
   case 105:
-#line 950 "parse.y" /* yacc.c:1646  */
+#line 958 "parse.y" /* yacc.c:1646  */
     {
 			if(!functionDepth){
         yyerror("expected identifier or '(' before 'return'");
       }
     }
-#line 2759 "parse.c" /* yacc.c:1646  */
+#line 2767 "parse.c" /* yacc.c:1646  */
     break;
 
   case 106:
-#line 956 "parse.y" /* yacc.c:1646  */
+#line 964 "parse.y" /* yacc.c:1646  */
     { 
       emit(ret, (yyvsp[-1].enode), NULL, NULL, currQuad, yylineno); 
       retLabel = currQuad ; 
       emit(jump , newexpr_constnum(0) , NULL  , NULL , currQuad ,yylineno);
     }
-#line 2769 "parse.c" /* yacc.c:1646  */
+#line 2777 "parse.c" /* yacc.c:1646  */
     break;
 
   case 107:
-#line 962 "parse.y" /* yacc.c:1646  */
+#line 970 "parse.y" /* yacc.c:1646  */
     {
       if(!functionDepth){
         yyerror("expected identifier or '(' before 'return'");
       }
     }
-#line 2779 "parse.c" /* yacc.c:1646  */
+#line 2787 "parse.c" /* yacc.c:1646  */
     break;
 
   case 108:
-#line 968 "parse.y" /* yacc.c:1646  */
+#line 976 "parse.y" /* yacc.c:1646  */
     {
       emit(ret, NULL, NULL, NULL, currQuad, yylineno);
       retLabel = currQuad ; 
       emit(jump , newexpr_constnum(0) , NULL  , NULL , currQuad ,yylineno);      
     }
-#line 2789 "parse.c" /* yacc.c:1646  */
+#line 2797 "parse.c" /* yacc.c:1646  */
     break;
 
 
-#line 2793 "parse.c" /* yacc.c:1646  */
+#line 2801 "parse.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -3017,7 +3025,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 974 "parse.y" /* yacc.c:1906  */
+#line 982 "parse.y" /* yacc.c:1906  */
 
 
 void yyerror(char *s){

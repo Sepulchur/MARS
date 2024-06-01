@@ -149,11 +149,11 @@ stmt:
     } 
       SEMICOLON
     {
-
+      
     }
 		| CONTINUE
     {
-      if(!loopcounter){yyerror("Use of 'return' while not in a loop");}
+      if(!loopcounter){yyerror("Use of 'continue' while not in a loop");}
     } 
       SEMICOLON
     {
@@ -321,7 +321,7 @@ term:
       if($2->type == tableitem_e){
         $$ = emit_iftableitem($2,table,yylineno);
         emit(add, $$, $$, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, $$, $2, $2->index, currQuad, yylineno);
+        emit(tablesetelem, $2, $2->index,$$, currQuad, yylineno);
       }
       else{
         emit(add, $2, $2, newexpr_constnum(1), currQuad, yylineno);
@@ -342,7 +342,7 @@ term:
         expr * value = emit_iftableitem($1,table,yylineno);
         emit(assign, $$, value, NULL, currQuad, yylineno);
         emit(add, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, $1, $1->index, currQuad, yylineno);
+        emit(tablesetelem, $1, $1->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, $$, $1, NULL, currQuad, yylineno);
@@ -358,7 +358,7 @@ term:
       if($2->type == tableitem_e){
         $$ = emit_iftableitem($2,table,yylineno);
         emit(sub, $$, $$, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, $$, $2, $2->index, currQuad, yylineno);
+        emit(tablesetelem, $2, $2->index,$$, currQuad, yylineno);
       }
       else{
         emit(sub, $2, $2, newexpr_constnum(1), currQuad, yylineno);
@@ -378,7 +378,7 @@ term:
         expr * value = emit_iftableitem($1,table,yylineno);
         emit(assign, $$, value, NULL, currQuad, yylineno);
         emit(sub, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, $1, $1->index, currQuad, yylineno);
+        emit(tablesetelem, $1, $1->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, $$, $1, NULL, currQuad, yylineno);
@@ -919,6 +919,12 @@ whilestmt :
 forprefix: 
       FOR LEFT_PARENTHESIS elist SEMICOLON M expr SEMICOLON
     {
+      emits = 0;
+      backPatch($6->falseList, nextquadlabel()+2);
+      emit(assign, $6, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $6, newexpr_constbool(0), NULL, currQuad, yylineno); 
+
       $$ = nextquadlabel();
       test = $5;
 			emit(if_eq, newexpr_constnum(1), $6, newexpr_constbool('1'), currQuad, yylineno);
@@ -941,7 +947,9 @@ forstmt:
 			patchlabel($8, $2+1);
 
 			patchBreakContinue(breakstacklist, nextquadlabel());
+      //pop(breakstacklist);
 			patchBreakContinue(contstacklist, $2+1);
+      //pop(contstacklist);
 		}
 		;
 
