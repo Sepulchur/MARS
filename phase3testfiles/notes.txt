@@ -1,0 +1,21 @@
+1. p3t_assignments_complex , operations out of order propably doesnt matter (fixed , but temp counter goes further than in okeanos)
+2. p3t_assignments_objects , line 7 causes syntax error removing the parenthesis fixes it, order of arguements not the same as okeanos , extra TABLE_GET_ELEM in okeanos for every obj .
+3. p3t_assignments_simple , assigns out of order , some are using wrong elements (px assign a a )(done)
+4. p3t_basic_expr , same as above (done)
+5. p3t_calls , param nil not needed(done)
+6. p3t_funcdecl , missing a jump after return , jump labels not correct (done , first jumps different than okeanos , ours seem more correct ?)
+
+all backpatch 
+both flowcontrol
+relational
+
+                        changes :
+
+    parse.y
+
+funcdef (for jump after return)
+returnstmt (for jump after return)
+
+    quad.c
+
+make_call (removed param nil)
