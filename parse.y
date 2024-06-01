@@ -130,13 +130,13 @@ stmt:
     {
       resettemp(); 
       $$=NULL;
-      if(emits == 1 ){ //dritsas
+      if(emits == 1){ //dritsas
         backPatch($1->falseList, nextquadlabel()+2);
         emit(assign, $1, newexpr_constbool(1), NULL, currQuad, yylineno);
         emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
         emit(assign, $1, newexpr_constbool(0), NULL, currQuad, yylineno);
         make = true;
-        emits = 0 ;
+        emits = 0;
       }
     }
     | ifstmt {resettemp(); $$=NULL;}
@@ -265,12 +265,12 @@ expr:
 
       if(ORcounter == 1){ //dritsas
 				backPatch(tempQuad, Mlabel+2);
-        ORcounter = 0 ;
+        ORcounter = 0;
 			}
 														
 			$$->trueList = $5->trueList;
 			$$->falseList = mergelist($1->falseList, $5->falseList);
-      emits = 1 ;
+      emits = 1;
 		} 
 		| expr OR{logicEmit($1, yylineno);} M expr 
     {
@@ -286,8 +286,7 @@ expr:
 			$$->trueList = mergelist($1->trueList, $5->trueList);
 			$$->falseList = $5->falseList;
       ORcounter = 1;
-      emits = 1 ;
-
+      emits = 1;
 		} 
 	  | term{$$=$1;}
 	  ;
@@ -874,6 +873,7 @@ elseprefix:
 whilestart : 
       WHILE
     {
+      //backPatch($1->falseList, nextquadlabel()+2);
       $$ = nextquadlabel();
     }
     ;
@@ -881,21 +881,26 @@ whilestart :
 whilecond : 
       LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
     {
+      backPatch($2->falseList, nextquadlabel()+2);
+      emit(assign, $2, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $2, newexpr_constbool(0), NULL, currQuad, yylineno);
+
       ++loopcounter;	
 			push(breakstacklist, 0); 
-      push(contstacklist, 0); 
-      printf("edo %d", nextquadlabel());
-			emit(if_eq, newexpr_constnum(nextquadlabel()+2), $2, newexpr_constbool('1'), currQuad, yylineno); 
+      push(contstacklist, 0);
+			emit(if_eq, newexpr_constnum(nextquadlabel()+2), $2, newexpr_constbool('1'), currQuad+2, yylineno); 
 		  $$ = nextquadlabel();   
 			emit(jump, newexpr_constnum(0), NULL, NULL, currQuad, yylineno);
+      emits = 0;
     }
     ;
 
 whilestmt : 
       whilestart whilecond stmt
     {
-      --loopcounter;	
-			emit(jump, newexpr_constnum($1), NULL, NULL, currQuad, yylineno);   
+      --loopcounter;
+			emit(jump, newexpr_constnum(0), NULL, NULL, $1, yylineno);   
 			patchlabel($2, nextquadlabel());   
 
 			patchBreakContinue(breakstacklist, nextquadlabel());
