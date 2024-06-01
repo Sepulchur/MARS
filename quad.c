@@ -22,6 +22,8 @@ unsigned scopeSpaceCounter = 1;
 unsigned ORcounter = 0;
 unsigned ANDcounter = 0;
 unsigned addone = 0 ; //dritsas
+unsigned NIKOS = 0 ;
+
 void comperror(char *format, ...) {
     va_list args;
 
@@ -526,10 +528,10 @@ char *exprToString(expr *e){
                 strcpy(result, e->sym->passport.name);
             } 
             else{
-                if(addone == 0 ){//dritsas
+                if(addone == 0 || NIKOS == 1){//dritsas
                     sprintf(result, "%f", e->numConst ); 
                 }
-                else {
+                else{
                     sprintf(result, "%f", e->numConst +1 );                     
                 }
             }
@@ -585,12 +587,14 @@ void printQuad(FILE *f, int index) {
             free(result);     
         }
         if(quads[index].arg2) {
+            NIKOS = 1;
             result = exprToString(quads[index].arg2);
+            NIKOS = 0;
             fprintf(f, " %s", result);
             free(result);      
         }
-        if(quads[index].result && addone) {
-            result = exprToString(quads[index].result );
+        if(quads[index].result && addone) {            
+            result = exprToString(quads[index].result);
             fprintf(f, " %s", result);
             free(result);
         }

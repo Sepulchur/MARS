@@ -844,9 +844,16 @@ M: 	{$M = nextquadlabel();};
 ifprefix: 
       IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS  
     {
-      emit(if_eq, $3, newexpr_constbool(1), NULL, nextquad() + 2, yylineno);
+      backPatch($3->falseList, nextquadlabel()+2);
+      emit(assign, $3, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $3, newexpr_constbool(0), NULL, currQuad, yylineno); 
+
+      emit(if_eq, newexpr_constnum(nextquadlabel()+2), $3, newexpr_constbool('1'), currQuad, yylineno); 
       $$ = nextquadlabel();
       emit(jump, newexpr_constnum(0), NULL, NULL, 0, yylineno);
+    
+      emits = 0;
     }
     ;
 
@@ -873,7 +880,6 @@ elseprefix:
 whilestart : 
       WHILE
     {
-      //backPatch($1->falseList, nextquadlabel()+2);
       $$ = nextquadlabel();
     }
     ;
@@ -884,7 +890,7 @@ whilecond :
       backPatch($2->falseList, nextquadlabel()+2);
       emit(assign, $2, newexpr_constbool(1), NULL, currQuad, yylineno);
       emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
-      emit(assign, $2, newexpr_constbool(0), NULL, currQuad, yylineno);
+      emit(assign, $2, newexpr_constbool(0), NULL, currQuad, yylineno); 
 
       ++loopcounter;	
 			push(breakstacklist, 0); 
@@ -903,9 +909,9 @@ whilestmt :
 			emit(jump, newexpr_constnum(0), NULL, NULL, $1, yylineno);   
 			patchlabel($2, nextquadlabel());   
 
-			patchBreakContinue(breakstacklist, nextquadlabel());
+			//patchBreakContinue(breakstacklist, nextquadlabel());
 			pop(breakstacklist);
-			patchBreakContinue(contstacklist, $1);
+			//patchBreakContinue(contstacklist, $1);
 			pop(contstacklist);
     }
     ;
