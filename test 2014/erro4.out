@@ -1,0 +1,19 @@
+[31mValidity error: Conflicting name REDIFINITION of function at line 4
+[0m------------	Scope #0	------------
+print	[LIBFUNC]	(line 0) (scope 0)
+input	[LIBFUNC]	(line 0) (scope 0)
+objectmemberkeys	[LIBFUNC]	(line 0) (scope 0)
+objecttotalmembers	[LIBFUNC]	(line 0) (scope 0)
+objectcopy	[LIBFUNC]	(line 0) (scope 0)
+totalarguments	[LIBFUNC]	(line 0) (scope 0)
+argument	[LIBFUNC]	(line 0) (scope 0)
+typeof	[LIBFUNC]	(line 0) (scope 0)
+strtonum	[LIBFUNC]	(line 0) (scope 0)
+sqrt	[LIBFUNC]	(line 0) (scope 0)
+cos	[LIBFUNC]	(line 0) (scope 0)
+sin	[LIBFUNC]	(line 0) (scope 0)
+f	[USERFUNC]	(line 3) (scope 0)
+------------	Scope #1	------------
+x	[FORMAL]	(line 3) (scope 1)
+------------	Scope #2	------------
+y	[FORMAL]	(line 4) (scope 2)

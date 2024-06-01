@@ -1,0 +1,5 @@
+//mail from: katsikas@csd.uoc.gr
+
+{
+       ::Global = 7;	//ERROR : No global variable '::Global' exists
+}

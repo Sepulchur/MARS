@@ -1,0 +1,19 @@
+[31mError: doesnt have acccess at line : 6
+ [0m[31mError: Cannot assign value to function at line  at line : 6
+ [0m------------	Scope #0	------------
+print	[LIBFUNC]	(line 0) (scope 0)
+input	[LIBFUNC]	(line 0) (scope 0)
+objectmemberkeys	[LIBFUNC]	(line 0) (scope 0)
+objecttotalmembers	[LIBFUNC]	(line 0) (scope 0)
+objectcopy	[LIBFUNC]	(line 0) (scope 0)
+totalarguments	[LIBFUNC]	(line 0) (scope 0)
+argument	[LIBFUNC]	(line 0) (scope 0)
+typeof	[LIBFUNC]	(line 0) (scope 0)
+strtonum	[LIBFUNC]	(line 0) (scope 0)
+sqrt	[LIBFUNC]	(line 0) (scope 0)
+cos	[LIBFUNC]	(line 0) (scope 0)
+sin	[LIBFUNC]	(line 0) (scope 0)
+f	[USERFUNC]	(line 3) (scope 0)
+------------	Scope #1	------------
+f	[LOCALVAR]	(line 4) (scope 1)
+g	[USERFUNC]	(line 5) (scope 1)

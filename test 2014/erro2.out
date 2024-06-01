@@ -1,0 +1,16 @@
+------------	Scope #0	------------
+print	[LIBFUNC]	(line 0) (scope 0)
+input	[LIBFUNC]	(line 0) (scope 0)
+objectmemberkeys	[LIBFUNC]	(line 0) (scope 0)
+objecttotalmembers	[LIBFUNC]	(line 0) (scope 0)
+objectcopy	[LIBFUNC]	(line 0) (scope 0)
+totalarguments	[LIBFUNC]	(line 0) (scope 0)
+argument	[LIBFUNC]	(line 0) (scope 0)
+typeof	[LIBFUNC]	(line 0) (scope 0)
+strtonum	[LIBFUNC]	(line 0) (scope 0)
+sqrt	[LIBFUNC]	(line 0) (scope 0)
+cos	[LIBFUNC]	(line 0) (scope 0)
+sin	[LIBFUNC]	(line 0) (scope 0)
+G	[USERFUNC]	(line 3) (scope 0)
+------------	Scope #1	------------
+F	[USERFUNC]	(line 4) (scope 1)

@@ -1,0 +1,23 @@
+[31mError: doesnt have acccess at line : 11
+ [0m[31mError: doesnt have acccess at line : 12
+ [0m------------	Scope #0	------------
+print	[LIBFUNC]	(line 0) (scope 0)
+input	[LIBFUNC]	(line 0) (scope 0)
+objectmemberkeys	[LIBFUNC]	(line 0) (scope 0)
+objecttotalmembers	[LIBFUNC]	(line 0) (scope 0)
+objectcopy	[LIBFUNC]	(line 0) (scope 0)
+totalarguments	[LIBFUNC]	(line 0) (scope 0)
+argument	[LIBFUNC]	(line 0) (scope 0)
+typeof	[LIBFUNC]	(line 0) (scope 0)
+strtonum	[LIBFUNC]	(line 0) (scope 0)
+sqrt	[LIBFUNC]	(line 0) (scope 0)
+cos	[LIBFUNC]	(line 0) (scope 0)
+sin	[LIBFUNC]	(line 0) (scope 0)
+i	[GLOBAL]	(line 2) (scope 0)
+x	[GLOBAL]	(line 3) (scope 0)
+y	[GLOBAL]	(line 4) (scope 0)
+foo	[USERFUNC]	(line 6) (scope 0)
+------------	Scope #1	------------
+x	[FORMAL]	(line 6) (scope 1)
+y	[FORMAL]	(line 6) (scope 1)
+g	[USERFUNC]	(line 10) (scope 1)

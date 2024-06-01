@@ -1,0 +1,22 @@
+[31mError: Argument causes 'Conflicting name with library function' at line : 1
+ [0m[31mError: Argument causes 'Conflicting name with library function' at line : 1
+ [0m[31mValidity error: Conflicting name with library function at line 5
+[0m[31mError: Conflicting name with library function at line : 10
+ [0m------------	Scope #0	------------
+print	[LIBFUNC]	(line 0) (scope 0)
+input	[LIBFUNC]	(line 0) (scope 0)
+objectmemberkeys	[LIBFUNC]	(line 0) (scope 0)
+objecttotalmembers	[LIBFUNC]	(line 0) (scope 0)
+objectcopy	[LIBFUNC]	(line 0) (scope 0)
+totalarguments	[LIBFUNC]	(line 0) (scope 0)
+argument	[LIBFUNC]	(line 0) (scope 0)
+typeof	[LIBFUNC]	(line 0) (scope 0)
+strtonum	[LIBFUNC]	(line 0) (scope 0)
+sqrt	[LIBFUNC]	(line 0) (scope 0)
+cos	[LIBFUNC]	(line 0) (scope 0)
+sin	[LIBFUNC]	(line 0) (scope 0)
+foo	[USERFUNC]	(line 1) (scope 0)
+print	[USERFUNC]	(line 5) (scope 0)
+F	[USERFUNC]	(line 9) (scope 0)
+------------	Scope #1	------------
+geia	[LOCALVAR]	(line 2) (scope 1)
