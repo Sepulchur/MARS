@@ -1,1 +1,5 @@
-t.z=1;
+function iamafunction(a, b) { 
+	a + b;
+	return 8;
+	9-0;
+}

@@ -145,19 +145,20 @@ stmt:
     | returnstmt {resettemp(); $$=NULL;}
     | BREAK
     {
+      printf("%d  " , loopcounter);
       if(!loopcounter){yyerror("Use of 'break' while not in a loop");}
     } 
       SEMICOLON
     {
-
+      emit(jump, newexpr_constnum(0), (expr *)0, (expr *)0, currQuad, yylineno);
     }
 		| CONTINUE
     {
-      if(!loopcounter){yyerror("Use of 'return' while not in a loop");}
+      if(!loopcounter){yyerror("Use of 'continue' while not in a loop");}
     } 
       SEMICOLON
     {
-
+      emit(jump, newexpr_constnum(0), (expr *)0, (expr *)0, currQuad, yylineno);
     }
     | block {resettemp(); $$=NULL;}
     | funcdef {resettemp(); $$=NULL;}
@@ -308,12 +309,6 @@ term:
 				$2->falseList= createFalseList(nextquadlabel());  
 				emit(if_eq, $2->falseList, $2, newexpr_constbool(1), currQuad, yylineno);
 				emit(jump, $2->trueList, NULL, NULL, currQuad, yylineno);
-<<<<<<< Updated upstream
-				emit(assign, $$, newexpr_constbool(1), NULL, currQuad, yylineno);
-    		emit(jump, newexpr_constnum(nextquadlabel()+2), NULL, NULL, nextquadlabel(), yylineno);
-    		emit(assign, $$, newexpr_constbool(0), NULL, currQuad, yylineno);
-=======
->>>>>>> Stashed changes
 			}
 			$$->trueList = $2->falseList; 
 			$$->falseList = $2->trueList; 
