@@ -589,6 +589,14 @@ void printQuad(FILE *f, int index) {
             fprintf(f, " %s", result);
             free(result);      
         }
+<<<<<<< Updated upstream
+=======
+        if(quads[index].result && addone) {
+            result = exprToString(quads[index].result );
+            fprintf(f, " %s", result);
+            free(result);
+        }
+>>>>>>> Stashed changes
     }
     fprintf(f, " [line: %d]\n", quads[index].line);
     addone = 0 ; //dritsas

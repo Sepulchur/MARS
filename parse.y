@@ -259,7 +259,6 @@ expr:
 			logicEmit($5, yylineno);
 
 			Mlabel = $5->trueList->label;
-      printf("263");
 			backPatch($1->trueList, Mlabel);
 			backPatch($1->falseList, $1->falseList->label+2);
 
@@ -309,9 +308,12 @@ term:
 				$2->falseList= createFalseList(nextquadlabel());  
 				emit(if_eq, $2->falseList, $2, newexpr_constbool(1), currQuad, yylineno);
 				emit(jump, $2->trueList, NULL, NULL, currQuad, yylineno);
+<<<<<<< Updated upstream
 				emit(assign, $$, newexpr_constbool(1), NULL, currQuad, yylineno);
     		emit(jump, newexpr_constnum(nextquadlabel()+2), NULL, NULL, nextquadlabel(), yylineno);
     		emit(assign, $$, newexpr_constbool(0), NULL, currQuad, yylineno);
+=======
+>>>>>>> Stashed changes
 			}
 			$$->trueList = $2->falseList; 
 			$$->falseList = $2->trueList; 
@@ -325,7 +327,7 @@ term:
       if($2->type == tableitem_e){
         $$ = emit_iftableitem($2,table,yylineno);
         emit(add, $$, $$, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, $$, $2, $2->index, currQuad, yylineno);
+        emit(tablesetelem,  $2, $2->index,$$, currQuad, yylineno);
       }
       else{
         emit(add, $2, $2, newexpr_constnum(1), currQuad, yylineno);
@@ -346,7 +348,7 @@ term:
         expr * value = emit_iftableitem($1,table,yylineno);
         emit(assign, $$, value, NULL, currQuad, yylineno);
         emit(add, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, $1, $1->index, currQuad, yylineno);
+        emit(tablesetelem, $1, $1->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, $$, $1, NULL, currQuad, yylineno);
@@ -362,7 +364,7 @@ term:
       if($2->type == tableitem_e){
         $$ = emit_iftableitem($2,table,yylineno);
         emit(sub, $$, $$, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, $$, $2, $2->index, currQuad, yylineno);
+        emit(tablesetelem,  $2, $2->index,$$, currQuad, yylineno);
       }
       else{
         emit(sub, $2, $2, newexpr_constnum(1), currQuad, yylineno);
@@ -382,7 +384,7 @@ term:
         expr * value = emit_iftableitem($1,table,yylineno);
         emit(assign, $$, value, NULL, currQuad, yylineno);
         emit(sub, value, value, newexpr_constnum(1), currQuad, yylineno);
-        emit(tablesetelem, value, $1, $1->index, currQuad, yylineno);
+        emit(tablesetelem,  $1, $1->index,value, currQuad, yylineno);
       }
       else{
         emit(assign, $$, $1, NULL, currQuad, yylineno);
@@ -426,6 +428,8 @@ assignexpr:
         if($5 != NULL){
         $$ =  emit_iftableitem($5, table,yylineno);
         }
+                printf("=");
+
 				emit(tablesetelem, $1,  $1->index , $$ , currQuad , yylineno);
 
 				$$ = emit_iftableitem($1, table,yylineno);
@@ -622,6 +626,7 @@ objectdef:
 			node->sym = newtemp(table,0);
 			emit(tablecreate, node, NULL, NULL, currQuad, yylineno);
 			while($2 != NULL){
+        printf("elist");
 				emit(tablesetelem,$2,node, newexpr_constnum(i++), currQuad, yylineno);
 				$2 = $2->next;
 			}
@@ -631,6 +636,7 @@ objectdef:
     {
       expr *node = newexpr(newtable_e);
 			node->sym = newtemp(table,0);
+      printf("indexed");
 			emit(tablecreate, node, NULL, NULL, currQuad, yylineno);
 			while($2!=NULL){
 				emit(tablesetelem, $2,node, $2->index, currQuad, yylineno);
@@ -887,7 +893,6 @@ whilecond :
       ++loopcounter;	
 			push(breakstacklist, 0); 
       push(contstacklist, 0); 
-      printf("edo %d", nextquadlabel());
 			emit(if_eq, newexpr_constnum(nextquadlabel()+2), $2, newexpr_constbool('1'), currQuad, yylineno); 
 		  $$ = nextquadlabel();   
 			emit(jump, newexpr_constnum(0), NULL, NULL, currQuad, yylineno);
