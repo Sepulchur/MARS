@@ -309,9 +309,6 @@ term:
 				$2->falseList= createFalseList(nextquadlabel());  
 				emit(if_eq, $2->falseList, $2, newexpr_constbool(1), currQuad, yylineno);
 				emit(jump, $2->trueList, NULL, NULL, currQuad, yylineno);
-				emit(assign, $$, newexpr_constbool(1), NULL, currQuad, yylineno);
-    		emit(jump, newexpr_constnum(nextquadlabel()+2), NULL, NULL, nextquadlabel(), yylineno);
-    		emit(assign, $$, newexpr_constbool(0), NULL, currQuad, yylineno);
 			}
 			$$->trueList = $2->falseList; 
 			$$->falseList = $2->trueList; 
