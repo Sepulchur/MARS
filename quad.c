@@ -293,7 +293,7 @@ expr *make_call(expr *lv, expr *reversed_elist, HashTable *table, unsigned line)
 expr *newexpr_constnum(double i){
     expr *e = newexpr(constnum_e);
     e->numConst = i;
-    e->label = (int)i ;
+    e->label = (int)i;
     return e;
 }
 
@@ -560,7 +560,7 @@ char *exprToString(expr *e){
 
 void printQuad(FILE *f, int index) {
     char *result;
-    fprintf(f, "%d: %s\t", index +1, opcodeToString(quads[index].op));//dritsas
+    fprintf(f, "%d: %s", index +1, opcodeToString(quads[index].op));//dritsas
     if(quads[index].op ==10 || quads[index].op ==11 ||
     quads[index].op ==12 || quads[index].op ==13 ||
     quads[index].op ==14 ||quads[index].op ==15){
@@ -569,33 +569,33 @@ void printQuad(FILE *f, int index) {
     if(quads[index].op == jump) {
         if(quads[index].result) {
             result = exprToString(quads[index].result); 
-            fprintf(f, " %d\t", (int)(quads[index].label +1)); 
+            fprintf(f, " %d", (int)(quads[index].label +1)); 
             free(result);
         }
     } 
     else {
         if(quads[index].result && !addone) {
             result = exprToString(quads[index].result );
-            fprintf(f, " %s\t", result);
+            fprintf(f, " %s", result);
             free(result);
         }
         if(quads[index].arg1) {
             result = exprToString(quads[index].arg1);
-            fprintf(f, " %s\t", result);
+            fprintf(f, " %s", result);
             free(result);     
         }
         if(quads[index].arg2) {
             result = exprToString(quads[index].arg2);
-            fprintf(f, " %s\t", result);
+            fprintf(f, " %s", result);
             free(result);      
         }
         if(quads[index].result && addone) {
             result = exprToString(quads[index].result );
-            fprintf(f, " %s\t", result);
+            fprintf(f, " %s", result);
             free(result);
         }
     }
-    fprintf(f, " [line: %d]\n", quads[index].line);
+    fprintf(f, " [line %d]\n", quads[index].line);
     addone = 0 ; //dritsas
 }
 
