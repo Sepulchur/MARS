@@ -149,7 +149,7 @@ stmt:
     } 
       SEMICOLON
     {
-      
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
     }
 		| CONTINUE
     {
@@ -157,7 +157,7 @@ stmt:
     } 
       SEMICOLON
     {
-
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
     }
     | block {resettemp(); $$=NULL;}
     | funcdef {resettemp(); $$=NULL;}
@@ -618,7 +618,7 @@ objectdef:
 			node->sym = newtemp(table,0);
 			emit(tablecreate, node, NULL, NULL, currQuad, yylineno);
 			while($2 != NULL){
-				emit(tablesetelem,$2,node, newexpr_constnum(i++), currQuad, yylineno);
+				emit(tablesetelem, node, newexpr_constnum(i++), $2, currQuad, yylineno);
 				$2 = $2->next;
 			}
 			$$ = node;
@@ -629,7 +629,7 @@ objectdef:
 			node->sym = newtemp(table,0);
 			emit(tablecreate, node, NULL, NULL, currQuad, yylineno);
 			while($2!=NULL){
-				emit(tablesetelem, $2,node, $2->index, currQuad, yylineno);
+				emit(tablesetelem, node, $2->index, $2, currQuad, yylineno);
 				$2 = $2->next;
 			}
 			$$ = node;		
@@ -844,16 +844,16 @@ M: 	{$M = nextquadlabel();};
 ifprefix: 
       IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS  
     {
-      backPatch($3->falseList, nextquadlabel()+2);
-      emit(assign, $3, newexpr_constbool(1), NULL, currQuad, yylineno);
-      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
-      emit(assign, $3, newexpr_constbool(0), NULL, currQuad, yylineno); 
-
+      if(emits){
+        backPatch($3->falseList, nextquadlabel()+2);
+        emit(assign, $3, newexpr_constbool(1), NULL, currQuad, yylineno);
+        emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+        emit(assign, $3, newexpr_constbool(0), NULL, currQuad, yylineno); 
+        emits = 0;
+      }
       emit(if_eq, newexpr_constnum(nextquadlabel()+2), $3, newexpr_constbool('1'), currQuad, yylineno); 
       $$ = nextquadlabel();
-      emit(jump, newexpr_constnum(0), NULL, NULL, 0, yylineno);
-    
-      emits = 0;
+      emit(jump, newexpr_constnum(0), NULL, NULL, 0, yylineno);    
     }
     ;
 
@@ -887,24 +887,25 @@ whilestart :
 whilecond : 
       LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
     {
-      backPatch($2->falseList, nextquadlabel()+2);
-      emit(assign, $2, newexpr_constbool(1), NULL, currQuad, yylineno);
-      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
-      emit(assign, $2, newexpr_constbool(0), NULL, currQuad, yylineno); 
-
+      if(emits){
+        backPatch($2->falseList, nextquadlabel()+2);
+        emit(assign, $2, newexpr_constbool(1), NULL, currQuad, yylineno);
+        emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+        emit(assign, $2, newexpr_constbool(0), NULL, currQuad, yylineno);
+        emits = 0;
+      }
       ++loopcounter;	
 			push(breakstacklist, 0); 
       push(contstacklist, 0);
 			emit(if_eq, newexpr_constnum(nextquadlabel()+2), $2, newexpr_constbool('1'), currQuad+2, yylineno); 
 		  $$ = nextquadlabel();   
 			emit(jump, newexpr_constnum(0), NULL, NULL, currQuad, yylineno);
-      emits = 0;
     }
     ;
 
 whilestmt : 
       whilestart whilecond stmt
-    {
+    { 
       --loopcounter;
 			emit(jump, newexpr_constnum(0), NULL, NULL, $1, yylineno);   
 			patchlabel($2, nextquadlabel());   

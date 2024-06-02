@@ -528,7 +528,7 @@ char *exprToString(expr *e){
                 strcpy(result, e->sym->passport.name);
             } 
             else{
-                if(addone == 0 || NIKOS == 1){//dritsas
+                if(addone == 0 || NIKOS == 0){//dritsas
                     sprintf(result, "%f", e->numConst ); 
                 }
                 else{
@@ -570,6 +570,7 @@ void printQuad(FILE *f, int index) {
     }
     if(quads[index].op == jump) {
         if(quads[index].result) {
+            NIKOS = 1;
             result = exprToString(quads[index].result); 
             fprintf(f, " %d", (int)(quads[index].label +1)); 
             free(result);
@@ -587,20 +588,20 @@ void printQuad(FILE *f, int index) {
             free(result);     
         }
         if(quads[index].arg2) {
-            NIKOS = 1;
             result = exprToString(quads[index].arg2);
-            NIKOS = 0;
             fprintf(f, " %s", result);
             free(result);      
         }
-        if(quads[index].result && addone) {            
+        if(quads[index].result && addone) { 
+            NIKOS = 1;           
             result = exprToString(quads[index].result);
             fprintf(f, " %s", result);
             free(result);
         }
     }
     fprintf(f, " [line %d]\n", quads[index].line);
-    addone = 0 ; //dritsas
+    addone = 0; //dritsas
+    NIKOS = 0;
 }
 
 void printQuads(FILE *f){
