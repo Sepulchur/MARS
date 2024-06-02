@@ -69,7 +69,7 @@ unsigned int pop(UIntStack *s){
         return -1; 
     } 
     else{
-        return s->items[s->top--];
+        return s->items[--s->top];
     }
 }
 

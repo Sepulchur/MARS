@@ -86,7 +86,6 @@ void exitScope(HashTable *table){
 %left ADD MINUS
 %left MULTIPLICATION DIVISION MODULO
 %right NOT DECREMENT INCREMENT
-%nonassoc UMINUS
 %left PERIOD DOUBLE_PERIOD
 %left LEFT_SQUARE_BRACE RIGHT_SQUARE_BRACE
 %left LEFT_PARENTHESIS RIGHT_PARENTHESIS
@@ -149,7 +148,7 @@ stmt:
     } 
       SEMICOLON
     {
-      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, currQuad, yylineno);
     }
 		| CONTINUE
     {
@@ -157,7 +156,7 @@ stmt:
     } 
       SEMICOLON
     {
-      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, currQuad, yylineno);
     }
     | block {resettemp(); $$=NULL;}
     | funcdef {resettemp(); $$=NULL;}
@@ -186,7 +185,7 @@ expr:
         $$->type = expr_retType($$,$1,$3);
         $$->sym = returnTempName($1,$3,table);
         emit(sub, $$, $1, $3, currQuad, yylineno);
-      } 
+      }
     }
 	  | expr MULTIPLICATION expr 
     { 
@@ -217,12 +216,22 @@ expr:
     }
     | expr EQUAL expr
     {
+      emits = 0;
+      backPatch($1->falseList, nextquadlabel()+2);
+      emit(assign, $1, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $1, newexpr_constbool(0), NULL, currQuad, yylineno);
       $$ = newexpr(boolexpr_e);  
       $$->sym = returnTempName($1,$3,table); 
       $$ = relopEmit($$, $1, $3, if_eq, yylineno);  
     }
     | expr UNEQUAL expr
     {
+      emits = 0;
+      backPatch($1->falseList, nextquadlabel()+2);
+      emit(assign, $1, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $1, newexpr_constbool(0), NULL, currQuad, yylineno);
       $$ = newexpr(boolexpr_e);  
       $$->sym = returnTempName($1,$3,table);
       $$ = relopEmit($$, $1, $3, if_noteq, yylineno); 
@@ -295,9 +304,9 @@ term:
       LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {$$=$2;}
 		| MINUS expr 
     {
-      $$=newexpr(arithexpr_e); 
+      $$ = newexpr(arithexpr_e); 
       $$->sym = newtemp(table,0); 
-      emit(uminus, $$, $2, (expr *) 0, currQuad, yylineno);
+      emit(uminus, $$, $2, NULL, currQuad, yylineno);
     } 
     | NOT expr 
     {
@@ -920,11 +929,13 @@ whilestmt :
 forprefix: 
       FOR LEFT_PARENTHESIS elist SEMICOLON M expr SEMICOLON
     {
-      emits = 0;
-      backPatch($6->falseList, nextquadlabel()+2);
-      emit(assign, $6, newexpr_constbool(1), NULL, currQuad, yylineno);
-      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
-      emit(assign, $6, newexpr_constbool(0), NULL, currQuad, yylineno); 
+      if(emits){
+        backPatch($6->falseList, nextquadlabel()+2);
+        emit(assign, $6, newexpr_constbool(1), NULL, currQuad, yylineno);
+        emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+        emit(assign, $6, newexpr_constbool(0), NULL, currQuad, yylineno); 
+        emits = 0;
+      }
 
       $$ = nextquadlabel();
       test = $5;

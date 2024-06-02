@@ -89,8 +89,7 @@ extern int yydebug;
     COLON = 299,
     DOUBLE_COLON = 300,
     PERIOD = 301,
-    DOUBLE_PERIOD = 302,
-    UMINUS = 303
+    DOUBLE_PERIOD = 302
   };
 #endif
 /* Tokens.  */
@@ -139,7 +138,6 @@ extern int yydebug;
 #define DOUBLE_COLON 300
 #define PERIOD 301
 #define DOUBLE_PERIOD 302
-#define UMINUS 303
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -153,7 +151,7 @@ union YYSTYPE
   float floatVal;
   struct expr* enode;
 
-#line 157 "parse.h" /* yacc.c:1909  */
+#line 155 "parse.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

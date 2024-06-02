@@ -11,14 +11,15 @@ BISON_OUT_C := parse.c
 BISON_OUT_H := parse.h 
 SYM_TABLE := symTable.c
 QUAD := quad.c
+VM := vm.c
 TARGET := parser
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): $(BISON_OUT_C) $(LEX_OUT) $(SYM_TABLE) $(QUAD)
-	$(CC) $(CFLAGS) -o $@ $(BISON_OUT_C) $(LEX_OUT) $(SYM_TABLE) $(QUAD)
+$(TARGET): $(BISON_OUT_C) $(LEX_OUT) $(SYM_TABLE) $(QUAD) $(VM)
+	$(CC) $(CFLAGS) -o $@ $(BISON_OUT_C) $(LEX_OUT) $(SYM_TABLE) $(QUAD) $(VM)
 
 $(LEX_OUT): $(LEX_SOURCE) $(BISON_OUT_C) $(BISON_OUT_H)
 	$(FLEX) --outfile=$@ $(LEX_SOURCE)

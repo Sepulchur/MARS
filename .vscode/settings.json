@@ -1,5 +1,11 @@
 {
     "githubPullRequests.ignoredPullRequestBranches": [
         "main"
-    ]
+    ],
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "*.y": "yacc",
+        "symtable.h": "c",
+        "stdio.h": "c"
+    }
 }
