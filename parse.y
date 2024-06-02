@@ -218,15 +218,26 @@ expr:
     }
     | expr EQUAL expr
     {
+      emits = 0;
+      backPatch($1->falseList, nextquadlabel()+2);
+      emit(assign, $1, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $1, newexpr_constbool(0), NULL, currQuad, yylineno);          
       $$ = newexpr(boolexpr_e);  
       $$->sym = returnTempName($1,$3,table); 
       $$ = relopEmit($$, $1, $3, if_eq, yylineno);  
     }
     | expr UNEQUAL expr
     {
+      emits = 0;
+      backPatch($1->falseList, nextquadlabel()+2);
+      emit(assign, $1, newexpr_constbool(1), NULL, currQuad, yylineno);
+      emit(jump, newexpr_constnum(0), NULL, NULL, nextquadlabel()+2, yylineno);
+      emit(assign, $1, newexpr_constbool(0), NULL, currQuad, yylineno);          
       $$ = newexpr(boolexpr_e);  
       $$->sym = returnTempName($1,$3,table);
       $$ = relopEmit($$, $1, $3, if_noteq, yylineno); 
+      emits = 1;
     }
 	  | expr GREATER expr 
     {
@@ -278,7 +289,7 @@ expr:
       $$->sym = returnTempName($1, $5, table); 
       logicEmit($5, yylineno);
 			Mlabel=$5->trueList->label;
-			backPatch($1->falseList, Mlabel);
+		  backPatch($1->falseList, Mlabel);
 			backPatch($1->trueList, $1->trueList->numConst+2);
 
 			tempQuad = cloneList($1->trueList); //dritsas
@@ -286,7 +297,6 @@ expr:
 			$$->trueList = mergelist($1->trueList, $5->trueList);
 			$$->falseList = $5->falseList;
       ORcounter = 1;
-      emits = 1 ;
 
 		} 
 	  | term{$$=$1;}
