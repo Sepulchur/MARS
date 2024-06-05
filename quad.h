@@ -3,6 +3,7 @@
 
 #include "symTable.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (total*sizeof(quad))
