@@ -41,7 +41,7 @@ typedef enum iopcode{
     assign, add, sub, mul, div_, mod, uminus, and,
     or, not, if_eq, if_noteq, if_lesseq, if_greatereq, if_less, 
     if_greater, call_, param,  ret, getretval, funcstart, funcend,    
-    tablecreate, tablegetelem, tablesetelem, jump    
+    tablecreate, tablegetelem, tablesetelem, jump ,nop   
 }iopcode;
 
 /*
@@ -134,6 +134,7 @@ typedef struct quad{
     unsigned    label;
     unsigned    line;
     unsigned    taddress;
+    unsigned    index;
 }quad;
 
 /*

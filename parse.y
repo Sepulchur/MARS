@@ -3,6 +3,7 @@
 #include "alpha_lex.h"
 #include "symTable.h"
 #include "quad.h"
+#include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1036,6 +1037,10 @@ int main(int argc, char **argv){
 		printQuads(f);
 
   fclose(f);
+
+  printf("\n--------------------------------Final Code-------------------------------------\n");
+  generate_all();
+	printInstructions();
   /*The queue is important*/
   free(loopStack->items);
   free(loopStack);

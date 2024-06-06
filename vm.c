@@ -8,11 +8,12 @@
 #include <stdarg.h>
 #include "math.h"
 
-unsigned funcstart_flag = 0; /*erxomai apo funcstart*/
-unsigned func_counter = 0; /* metraei emfaniseis synartisewn . to xrisimopoioume gia na vroyme to index sto pinaka synartisewn*/
+unsigned fstart_flag = 0; 
+unsigned fcounter = 0; 
 unsigned currStringConst = 0;
 char** namedLibfuncs;
 unsigned currLibfunct = 0;
+extern unsigned currQuad ; 
 extern quad* quads;
 
 unsigned currUserfunct = 0;
@@ -38,8 +39,16 @@ avm_memcell stack[AVM_STACKSIZE];
 stackFunc* funcstack;
 
 void initializeFuncStack(stackFunc *s) {
+    if (funcstack == NULL) {
+        fprintf(stderr, "Error: funcstack pointer is NULL\n");
+        exit(EXIT_FAILURE);
+    }
     s->capacity = 1;
     s->stack_array = (SymbolTableEntry_t**)malloc(s->capacity * sizeof(SymbolTableEntry_t*));
+    if (s->stack_array == NULL) {
+        fprintf(stderr, "Error: Memory allocation for stack_array failed\n");
+        exit(EXIT_FAILURE);
+    }
     s->top = 0;
 }
 
@@ -124,15 +133,17 @@ unsigned userfuncts_newfunc(SymbolTableEntry_t* sym){
         size++;
     }
     t->localSize = size;
-    t->saved_index = func_counter++;
+    t->saved_index = fcounter++;
 
     return currUserfunct - 1;
 }
 
 void make_operand(expr* e, vmarg* arg){
+
     if(e != NULL){
         switch(e->type){
-            case var_e:{
+            case var_e:{                
+
                 assert(e->sym);
                 arg->val = e->sym->offset;
                 if(e->sym->type == USERFUNC){
@@ -158,7 +169,7 @@ void make_operand(expr* e, vmarg* arg){
                 }
                 break;
             }
-            case tableitem_e:{
+            case tableitem_e:{               
                 switch(e->sym->space){
                     case programvar:
                         arg->type = global_a;
@@ -193,6 +204,10 @@ void make_operand(expr* e, vmarg* arg){
                 break;
             }
             case boolexpr_e:{
+                if(e->sym->passport.name[0] == '_'){
+                    arg->type=global_a;
+                    arg->val = e->sym->offset;               
+                }
                 break;
             }
             case assignexpr_e:{
@@ -252,14 +267,14 @@ void make_operand(expr* e, vmarg* arg){
             }
             case programfunc_e:{
                 /* arg->type = userfunc_a;
-                if(funcstart_flag){
+                if(fstart_flag){
                     e->sym->taddress = nextinstructionlabel();
                     arg->val = userfuncts_newfunc(e->sym);
-                    funcstart_flag = 0;
+                    fstart_flag = 0;
                 }else{
                     int i;
                     for(i = currUserfunct; i>=0; i--){
-                        if((func_counter - userFuncs[i].saved_index < 2) && userFuncs[i].id == e->sym->name){
+                        if((fcounter - userFuncs[i].saved_index < 2) && userFuncs[i].id == e->sym->name){
                             arg->val = i;
                             break;
                         }
@@ -300,6 +315,11 @@ void add_incomplete_jump(unsigned instrNo, unsigned iaddress) {
     incomplete_jump* ij = (incomplete_jump*)malloc(sizeof(incomplete_jump));
     ij->instrNo = instrNo;
     ij->iaddress = iaddress;
+    if(ij_head == (incomplete_jump*) 0){
+        ij_head = ij;
+        ij_head->next = NULL;
+        return;
+    }
     ij->next = ij_head;
     ij_head = ij;
     ij_total++;
@@ -309,11 +329,14 @@ void patch_incomplete_jumps() {
     incomplete_jump* ij = ij_head;
     while(ij != NULL){
         if(ij->iaddress == nextquadlabel()){
+                    printf("%d " , nextinstructionlabel());
+
             instructions[ij->instrNo].result.val = nextinstructionlabel(); 
         } 
         else{
             instructions[ij->instrNo].result.val = quads[ij->iaddress].taddress;
         }
+        ij = ij->next;
     } 
 }
 
@@ -345,20 +368,27 @@ void generate_NOP(quad* q) {
     emitInstruction(t);
 }
 
-void generate_relational(vmopcode op, quad* q) {
-    instruction* t = (instruction*)malloc(sizeof(instruction));
+void generate_relational(vmopcode op, quad *q){
+    instruction *t = (instruction*)malloc(sizeof(instruction));
     t->opcode = op;
-    make_operand(q->arg1, &(t->arg1));
-    make_operand(q->arg2, &(t->arg2));
-
+    t->srcLine = q->line;
+    make_operand(q->arg1, &t->arg1);
+    make_operand(q->arg2, &t->arg2);
     t->result.type = label_a;
-    if (q->result->label < q->label) {
-        t->result.val = quads[q->label].result->numConst; //??????
-    } 
-    else{
-        add_incomplete_jump(nextinstructionlabel(), q->label);
+    t->result.val = q->label;
+    if(op != 25){
+        t->arg1.val = q->arg1->numConst;
+        //t->arg1.type = q->arg1->type;
+        //t->arg2.type = q->arg2->type;
+        t->arg2.type = q->arg2->numConst;
     }
+    else{
+        t->arg1.type = nil_a;
+        t->arg2.type = nil_a;
+    }
+
     q->taddress = nextinstructionlabel();
+    
     emitInstruction(t);
 }
 
@@ -510,11 +540,10 @@ void generate_FUNCSTART(quad* q){
 
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = funcenter_v;
-    funcstart_flag = 1;
+    fstart_flag = 1;
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 }
-
 void generate_RETURN(quad* q){
     SymbolTableEntry_t* f;
     q->taddress = nextinstructionlabel();
@@ -543,45 +572,52 @@ void generate_FUNCEND(quad* q){
     q->taddress = nextinstructionlabel();
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = funcexit_v;
-    //func_counter--;
+    fcounter--;
     make_operand(q->result, &(t->result));
     
     emitInstruction(t);
 }
 
+void generate_UMINUS(quad* q){
+
+}
+
 typedef void (*generator_func_t)(quad*);
 
 generator_func_t generators[] = {
+    generate_ASSIGN,
     generate_ADD,
     generate_SUB,
     generate_MUL,
     generate_DIV,
     generate_MOD,
+    generate_UMINUS,
+    generate_AND,
+    generate_OR,
+    generate_NOT,
+    generate_IF_EQ,
+    generate_IF_NOTEQ,
+    generate_IF_LESSEQ,
+    generate_IF_GREATEREQ,    
+    generate_IF_LESS,
+    generate_IF_GREATER,
+    generate_CALL,
+    generate_PARAM,
+    generate_RETURN,
+    generate_GETRETVAL,
+    generate_FUNCSTART,
+    generate_FUNCEND,
     generate_NEWTABLE,
     generate_TABLEGETELEM,
     generate_TABLESETELEM,
-    generate_ASSIGN,
-    generate_NOP,
     generate_JUMP,
-    generate_IF_EQ,
-    generate_IF_NOTEQ,
-    generate_IF_GREATER,
-    generate_IF_GREATEREQ,
-    generate_IF_LESS,
-    generate_IF_LESSEQ,
-    generate_NOT,
-    generate_OR,
-    generate_AND,
-    generate_PARAM,
-    generate_CALL,
-    generate_GETRETVAL,
-    generate_FUNCSTART,
-    generate_RETURN,
-    generate_FUNCEND
+    generate_NOP
 };
+
 
 void generate_all(void){
     unsigned i;
+    funcstack = (stackFunc*)malloc(sizeof(stackFunc));
     initializeFuncStack(funcstack);
 
     for(i = 0; i < nextquadlabel(); ++i){ 
@@ -666,7 +702,8 @@ void reset_operand(vmarg* arg){
     arg = NULL;
 }
 
-/* void printInstructions() {
+void printInstructions() {
+    printf("\n");
     int i = 0;
     for (i = 0; i < nextinstructionlabel(); i++) {
         switch (instructions[i].opcode) {
@@ -681,7 +718,7 @@ void reset_operand(vmarg* arg){
                     printf("%d | assign | %d %d | %d %d:%s\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, namedLibfuncs[instructions[i].arg1.val]);
                 }else if(instructions[i].arg1.type == retval_a){
                     printf("%d | assign | %d %d | %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type);
-                }else{/*2nd assign
+                }else{
                     printf("%d | assign | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val);                   
                 }
                 break;
@@ -750,30 +787,31 @@ void reset_operand(vmarg* arg){
                 break;
         }
     }
-} */
+}  
 
-void printInstructionDetails(int index, instruction instr) {
-    char* opcodeNames[] = {"assign", "add", "sub", "mul", "div", "mod", 
-        "if_eq", "if_noteq", "if_lesseq", "if_greatereq", "if_less", "if_greater",
-        "callfunc", "pusharg", "enterfunc", "exitfunc", "tablecreate", "tablegetelement",
-        "tablesetelement", "nop", "jump"};
-    printf("%d | %s | Result: Type %d Value %d | Arg1: Type %d Value %d", index, opcodeNames[instr.opcode], instr.result.type, instr.result.val, instr.arg1.type, instr.arg1.val);
+/* void printInstructionDetails(int index, instruction instr) {
+    char* opcodeNames[] = {
+    "assign", "add", "sub", "mul", "div_", "mod", "uminus", "and",
+    "or", "not", "if_eq", "if_noteq", "if_lesseq", "if_greatereq", "if_less", 
+    "if_greater", "call_", "param",  "ret", "getretval", "funcstart", "funcend",    
+    "tablecreate", "tablegetelem", "tablesetelem", "jump","nop" };
+    printf("%d | %s | Result: Type %d Value %d | Arg1: Type %d Value %d", index+1, opcodeNames[instr.opcode], instr.result.type, instr.result.val, instr.arg1.type, instr.arg1.val);
 
     switch (instr.arg1.type) {
+
         case number_a:
-            printf(" | Number: %f\n", numConsts[instr.arg1.val]);
+            printf(" | Number: %f", numConsts[instr.arg1.val]);
             break;
         case string_a:
-            printf(" | String: \"%s\"\n", stringConsts[instr.arg1.val]);
+            printf(" | String: \"%s\"", stringConsts[instr.arg1.val]);
             break;
         case userfunc_a:
-            printf(" | User Function: %s\n", userFuncs[instr.arg1.val].id);
+            printf(" | User Function: %s", userFuncs[instr.arg1.val].id);
             break;
         case libfunc_a:
-            printf(" | Library Function: %s\n", namedLibfuncs[instr.arg1.val]);
+            printf(" | Library Function: %s", namedLibfuncs[instr.arg1.val]);
             break;
         default:
-            printf("\n");
             break;
     }
 
@@ -782,15 +820,16 @@ void printInstructionDetails(int index, instruction instr) {
         instr.opcode == jgt_v || instr.opcode == tablegetelem_v || instr.opcode == tablesetelem_v) {
         printf(" | Arg2: Type %d Value %d\n", instr.arg2.type, instr.arg2.val);
     }
+        printf("\n");
 }
 
 void printInstructions() {
     int nextInstructionCount = nextinstructionlabel(); 
-    printf("Instruction Details:\n");
+    printf("\nInstruction Details:\n\n");
     for (int i = 0; i < nextInstructionCount; i++) {
         printInstructionDetails(i, instructions[i]);
     }
-}
+}   */
 
 
 //--------------------------------------------------------------phase 5-----------------------------------------------------------------------------
@@ -823,7 +862,8 @@ typedef void (*memclear_func_t)(avm_memcell*);
 typedef double (*arithmetic_func_t)(double x, double y);
 typedef unsigned char (*tobool_func_t)(avm_memcell*);
 typedef void (*library_func_t)(void);
-/* typedef unsigned char (*mydispatch_t)(avm_memcell* rv1, avm_memcell* rv2);
+/* 
+typedef unsigned char (*mydispatch_t)(avm_memcell* rv1, avm_memcell* rv2);
 typedef unsigned char (*comparison_func_t)(double x, double y);
 */
 
@@ -1358,7 +1398,7 @@ void execute_pusharg(instruction* instr) {
     char* buffer;
     buffer = malloc(sizeof(char*));
     sprintf(buffer, "%.3f", m->data.numVal);
-    return buffer;
+    return buffer;vm.c:1656:5: error: ‘execute_jne’ undeclared here (not in a function); did you me
 }
 
 char* string_tostring(avm_memcell* m) {

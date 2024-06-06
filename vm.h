@@ -25,20 +25,35 @@
 #define execute_jlt execute_relational
 #define execute_jgt execute_relational */
 
-typedef enum vmopcode {
-    assign_v,   add_v,    sub_v,
-    mul_v,      div_v,    mod_v,
-    uminus_v,   and_v,    or_v,
-    not_v,      jeq_v,    jne_v,
-    jle_v,      jge_v,    jlt_v,    
-    jgt_v,      call_v,   pusharg_v,
-    nop_v,      jump_v,
 
-    funcenter_v,          
+typedef enum vmopcode {
+    assign_v,
+    add_v,
+    sub_v,
+    mul_v,
+    div_v,
+    mod_v,
+    uminus_v,
+    and_v,
+    or_v,
+    not_v,
+    jeq_v,
+    jne_v,
+    jle_v,
+    jge_v,
+    jlt_v,
+    jgt_v,
+    call_v,                         
+    pusharg_v,
+    ret_v,
+    getret_v,
+    funcenter_v,
     funcexit_v,
-    newtable_v, 
+    newtable_v,
     tablegetelem_v,
-    tablesetelem_v      
+    tablesetelem_v,
+    jump_v,
+    nop_v
 } vmopcode;
 
 typedef enum vmarg_t {
@@ -193,6 +208,8 @@ void generate_FUNCSTART(quad* q);
 void generate_RETURN(quad* q);
 
 void generate_FUNCEND(quad* q);
+
+void generate_UMINUS(quad* q);
 
 void generate_all(void);
 
