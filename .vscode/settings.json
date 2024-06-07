@@ -6,6 +6,13 @@
         "*.embeddedhtml": "html",
         "*.y": "yacc",
         "symtable.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "avm.h": "c",
+        "assert.h": "c",
+        "vector": "c",
+        "sstream": "c",
+        "unistd.h": "c",
+        "libfunc.h": "c",
+        "string.h": "c"
     }
 }
