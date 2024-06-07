@@ -6,8 +6,8 @@ char *strdup(const char *s);
 #include <stdbool.h>
 #include <stdarg.h>
 
-#include "symTable.h"
 #include "quad.h"
+
 extern void push_loopcounter (void);
 extern void pop_loopcounter (void);
 

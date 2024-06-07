@@ -17,8 +17,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
-#include "avm_table.h"
-#include "libfunc.h"
+#include "avm_table/avm_table.h"
+#include "libfunc/libfunc.h"
 
 typedef enum avm_memcell_t {
     number_m   = 0,

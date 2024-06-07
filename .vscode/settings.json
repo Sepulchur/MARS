@@ -13,6 +13,8 @@
         "sstream": "c",
         "unistd.h": "c",
         "libfunc.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdlib.h": "c",
+        "quad.h": "c"
     }
 }

@@ -1,7 +1,7 @@
 #ifndef EXECUTE_H
 #define EXECUTE_H
 
-#include "avm.h"
+#include "../avm.h"
 
 extern unsigned totalActuals;
 
@@ -10,6 +10,10 @@ extern unsigned totalActuals;
 #define execute_mul execute_arithmetic
 #define execute_div execute_arithmetic
 #define execute_mod execute_arithmetic
+/* #define execute_jle execute_relational
+#define execute_jge execute_relational
+#define execute_jlt execute_relational
+#define execute_jgt execute_relational */
 
 void execute_assign(instruction *instr);
 

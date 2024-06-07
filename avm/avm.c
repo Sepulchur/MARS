@@ -44,7 +44,7 @@ static inline void avm_calllibfunc(char* id) {
         totalActuals = 0;
         f(id);                              
         if(!executionFinished){             
-            execute_funcexit(NULL); 
+            //execute_funcexit(NULL); 
         }
     }
 }

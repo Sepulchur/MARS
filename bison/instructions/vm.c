@@ -1,4 +1,3 @@
-#include "quad.h"
 #include "vm.h"
 #include <stdbool.h>
 #include <stdlib.h>
@@ -6,57 +5,50 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
-#include "math.h"
-
-unsigned fstart_flag = 0; 
-unsigned fcounter = 0; 
-unsigned currStringConst = 0;
-char** namedLibfuncs;
-unsigned currLibfunct = 0;
-extern unsigned currQuad ; 
-extern quad* quads;
-unsigned counter = 0 ;
-
-unsigned currUserfunct = 0;
-
-unsigned currInstructions = 0;
-unsigned totalInstructions = 0;
 
 instruction* instructions = (instruction*)0;
 
 unsigned  totalNumConsts    = 0;
-unsigned  currNumConst      = 0;
 unsigned  totalNameLibfuncs = 0;
 unsigned  totalUserFuncs    = 0;
 unsigned  totalStringConsts = 0;
+unsigned  totalInstructions = 0;
+unsigned  currStringConst   = 0;
+unsigned  currLibfunc       = 0;
+unsigned  currUserfunc      = 0;
+unsigned  currInstruction   = 0;
+unsigned  currNumConst      = 0;
+unsigned  counter           = 0;
+unsigned  functstart        = 0; 
+unsigned  activefunc        = 0; 
 double*   numConsts;
 char**    stringConsts;
+char**    namedLibfuncs;
 userfunc* userFuncs;
 
-
-
-avm_memcell stack[AVM_STACKSIZE];
+extern unsigned currQuad; 
+extern quad* quads;
 
 stackFunc* funcstack;
 
-void initializeFuncStack(stackFunc *s) {
-    if (funcstack == NULL) {
+void initializeFuncStack(stackFunc *s){
+    if(funcstack == NULL){
         fprintf(stderr, "Error: funcstack pointer is NULL\n");
         exit(EXIT_FAILURE);
     }
     s->capacity = 1;
     s->stack_array = (SymbolTableEntry_t**)malloc(s->capacity * sizeof(SymbolTableEntry_t*));
-    if (s->stack_array == NULL) {
+    if(s->stack_array == NULL){
         fprintf(stderr, "Error: Memory allocation for stack_array failed\n");
         exit(EXIT_FAILURE);
     }
     s->top = 0;
 }
 
-void resizeFuncStack(stackFunc *s) {
+void resizeFuncStack(stackFunc *s){
     int new_capacity = s->capacity * 2; 
     SymbolTableEntry_t** new_array = (SymbolTableEntry_t**)realloc(s->stack_array, new_capacity * sizeof(SymbolTableEntry_t*));
-    if (new_array == NULL) {
+    if(new_array == NULL){
         printf("Failed to allocate memory during resize!\n");
         return; 
     }
@@ -64,24 +56,24 @@ void resizeFuncStack(stackFunc *s) {
     s->capacity = new_capacity;
 }
 
-void pushf(stackFunc *s, SymbolTableEntry_t *sym) {
-    if (s->top == s->capacity) {
+void pushf(stackFunc *s, SymbolTableEntry_t *sym){
+    if(s->top == s->capacity){
         resizeFuncStack(s);
     }
     s->stack_array[s->top] = sym;
     s->top++;
 }
 
-SymbolTableEntry_t* topf(stackFunc* s) {
-    if (s->top == 0) {
+SymbolTableEntry_t* topf(stackFunc* s){
+    if(s->top == 0){
         printf("ERROR, stack is empty!\n");
         return NULL;
     }
     return s->stack_array[s->top - 1];
 }
 
-SymbolTableEntry_t* popf(stackFunc *s) {
-    if (s->top == 0) {
+SymbolTableEntry_t* popf(stackFunc *s){
+    if(s->top == 0){
         printf("ERROR, stack is empty!\n");
         return NULL;
     }
@@ -89,10 +81,10 @@ SymbolTableEntry_t* popf(stackFunc *s) {
     return s->stack_array[s->top];
 }
 
-unsigned consts_newstring(char* s) {
+unsigned consts_newstring(char* s){
     char** t;
     if(currStringConst == totalStringConsts){
-        string_expand();
+        expandStringConstants();
     }
     t = stringConsts + currStringConst++;
     *t = s;
@@ -102,7 +94,7 @@ unsigned consts_newstring(char* s) {
 unsigned consts_newnumber(double n){
     double* t;
     if(currNumConst == totalNumConsts){
-        num_expand();
+        expandNumberConstants();
     }
     t = numConsts + currNumConst++;
     *t = n;
@@ -111,22 +103,23 @@ unsigned consts_newnumber(double n){
 
 unsigned libfuncts_newused(char* s){
     char** t;
-    if(currLibfunct == totalNameLibfuncs){
-        libfunc_expand();
+    if(currLibfunc == totalNameLibfuncs){
+        expandLibraryFunctions();
     }
-    t = namedLibfuncs + currLibfunct++;
+    t = namedLibfuncs + currLibfunc++;
     *t = s;
-    return currLibfunct - 1;
+    return currLibfunc - 1;
 }
 
 unsigned userfuncts_newfunc(SymbolTableEntry_t* sym){
     userfunc* t;
     unsigned  size = 0;
-    if(currUserfunct == totalUserFuncs){
-        userfunc_expand();
+    if(currUserfunc == totalUserFuncs){
+        expandUserFunctions();
     }
-    t = userFuncs + currUserfunct++;
-    t->id = sym->passport.name;
+
+    t = userFuncs + currUserfunc++;
+    t->id = (char*)sym->passport.name;
     t->address = sym->address;
     ArgList* temp = sym->argList;
     while(temp != NULL){
@@ -134,17 +127,14 @@ unsigned userfuncts_newfunc(SymbolTableEntry_t* sym){
         size++;
     }
     t->localSize = size;
-    t->saved_index = fcounter++;
 
-    return currUserfunct - 1;
+    return currUserfunc - 1;
 }
 
 void make_operand(expr* e, vmarg* arg){
-
     if(e != NULL){
         switch(e->type){
             case var_e:{                
-
                 assert(e->sym);
                 arg->val = e->sym->offset;
                 if(e->sym->type == USERFUNC){
@@ -268,14 +258,14 @@ void make_operand(expr* e, vmarg* arg){
             }
             case programfunc_e:{
                 arg->type = userfunc_a;
-                if(fstart_flag){
+                if(functstart){
                     e->sym->address = nextinstructionlabel();
                     arg->val = userfuncts_newfunc(e->sym);
-                    fstart_flag = 0;
+                    functstart = 0;
                 }else{
                     int i;
-                    for(i = currUserfunct; i>=0; i--){
-                        if((fcounter - userFuncs[i].saved_index < 2) && userFuncs[i].id == e->sym->passport.name){
+                    for(i = currUserfunc; i>=0; i--){
+                        if(userFuncs[i].id == e->sym->passport.name){
                             arg->val = i;
                             break;
                         }
@@ -286,7 +276,7 @@ void make_operand(expr* e, vmarg* arg){
             }
             case libraryfunc_e:{
                 arg->type = libfunc_a;
-                arg->val = libfuncts_newused(strdup(e->sym->passport.name));//strdup
+                arg->val = libfuncts_newused(strdup(e->sym->passport.name));
                 break;
             }
             default:
@@ -295,24 +285,24 @@ void make_operand(expr* e, vmarg* arg){
     }
 }
 
-void make_numberoperand(vmarg* arg, double val) {
+void make_numberoperand(vmarg* arg, double val){
     arg->val = consts_newnumber(val);
     arg->type = number_a;
 }
 
-void make_booloperand(vmarg* arg, unsigned val) {
+void make_booloperand(vmarg* arg, unsigned val){
     arg->val = val;
     arg->type = bool_a;
 }
 
-void make_retvaloperand(vmarg* arg) {
+void make_retvaloperand(vmarg* arg){
     arg->type = retval_a;
 }
 
 struct incomplete_jump*    ij_head  = (incomplete_jump*)0;
 unsigned                   ij_total = 0;
 
-void add_incomplete_jump(unsigned instrNo, unsigned iaddress) {
+void add_incomplete_jump(unsigned instrNo, unsigned iaddress){
     incomplete_jump* ij = (incomplete_jump*)malloc(sizeof(incomplete_jump));
     ij->instrNo = instrNo;
     ij->iaddress = iaddress;
@@ -326,7 +316,7 @@ void add_incomplete_jump(unsigned instrNo, unsigned iaddress) {
     ij_total++;
 }
 
-void patch_incomplete_jumps() {
+void patch_incomplete_jumps(){
     incomplete_jump* ij = ij_head;
     printf("%d " , ij->instrNo);
     while(ij != NULL){
@@ -340,7 +330,7 @@ void patch_incomplete_jumps() {
     }  
 }
 
-void generate(vmopcode op, quad* q) {
+void generate(vmopcode op, quad* q){
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = op;
 
@@ -354,16 +344,16 @@ void generate(vmopcode op, quad* q) {
     emitInstruction(t);
 }
 
-void generate_ADD(quad* q) { generate(add_v, q); }
-void generate_SUB(quad* q) { generate(sub_v, q); }
-void generate_MUL(quad* q) { generate(mul_v, q); }
-void generate_DIV(quad* q) { generate(div_v, q); }
-void generate_MOD(quad* q) { generate(mod_v, q); }
+void generate_ADD(quad* q){ generate(add_v, q); }
+void generate_SUB(quad* q){ generate(sub_v, q); }
+void generate_MUL(quad* q){ generate(mul_v, q); }
+void generate_DIV(quad* q){ generate(div_v, q); }
+void generate_MOD(quad* q){ generate(mod_v, q); }
 void generate_NEWTABLE(quad* q)     { generate(newtable_v, q); }
-void generate_TABLEGETELEM(quad* q) { generate(tablegetelem_v, q); }
-void generate_TABLESETELEM(quad* q) { generate(tablesetelem_v, q); }
+void generate_TABLEGETELEM(quad* q){ generate(tablegetelem_v, q); }
+void generate_TABLESETELEM(quad* q){ generate(tablesetelem_v, q); }
 void generate_ASSIGN(quad* q)       { generate(assign_v, q); }
-void generate_NOP(quad* q) {
+void generate_NOP(quad* q){
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = nop_v;
     emitInstruction(t);
@@ -376,7 +366,7 @@ void generate_relational(vmopcode op, quad *q){
     make_operand(q->arg2, &(t->arg2));
 
     t->result.type = label_a;
-    if (q->result->numConst < q->label) {
+    if(q->result->numConst < q->label){
         t->result.val = quads[q->label].result->numConst; /* ???t->result.val = quads[q->label].taddress;?? To taddress exei to rolo tou result numconst se jumps (target adress) */
     } else {
         add_incomplete_jump(nextinstructionlabel(), q->label);
@@ -406,20 +396,20 @@ void generate_NOT(quad* q){
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), false);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 
     t->opcode = jump_v;
-    reset_operand(&(t->arg1));
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg1));
+    resetOperand(&(t->arg2));
     t->result.type = label_a;
     t->result.val = nextinstructionlabel() + 2;
     emitInstruction(t);
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), true);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 }
@@ -441,20 +431,20 @@ void generate_OR(quad* q){
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), false);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 
     t->opcode = jump_v;
-    reset_operand(&(t->arg1));
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg1));
+    resetOperand(&(t->arg2));
     t->result.type = label_a;
     t->result.val = nextinstructionlabel() + 2;
     emitInstruction(t);
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), true);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 }
@@ -504,20 +494,20 @@ void generate_AND(quad* q){
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), 1);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 
     t->opcode = jump_v;
-    reset_operand(&(t->arg1));
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg1));
+    resetOperand(&(t->arg2));
     t->result.type = label_a;
     t->result.val = nextinstructionlabel() + 2;
     emitInstruction(t);
 
     t->opcode = assign_v;
     make_booloperand(&(t->arg1), 0);
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg2));
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 }
@@ -528,15 +518,15 @@ void generate_FUNCSTART(quad* q){
     f->address = nextinstructionlabel();
     q->taddress = nextinstructionlabel();
 
-    /* userfunc.add(f->passport.name, f->taddress, f->totallocals); */
     pushf(funcstack, f);
 
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = funcenter_v;
-    fstart_flag = 1;
+    functstart = 1;
     make_operand(q->result, &(t->result));
     emitInstruction(t);
 }
+
 void generate_RETURN(quad* q){
     SymbolTableEntry_t* f;
     q->taddress = nextinstructionlabel();
@@ -548,11 +538,10 @@ void generate_RETURN(quad* q){
     emitInstruction(t);
 
     f = topf(funcstack);
-    //pushf(f.returnList, nextinstructionlabel());
 
     t->opcode = jump_v;
-    reset_operand(&(t->arg1));
-    reset_operand(&(t->arg2));
+    resetOperand(&(t->arg1));
+    resetOperand(&(t->arg2));
     t->result.type = label_a;
     emitInstruction(t);
 }
@@ -565,7 +554,7 @@ void generate_FUNCEND(quad* q){
     q->taddress = nextinstructionlabel();
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = funcexit_v;
-    fcounter--;
+    activefunc--;
     make_operand(q->result, &(t->result));
     
     emitInstruction(t);
@@ -607,7 +596,6 @@ generator_func_t generators[] = {
     generate_NOP
 };
 
-
 void generate_all(void){
     unsigned i;
     funcstack = (stackFunc*)malloc(sizeof(stackFunc));
@@ -623,83 +611,118 @@ void generate_all(void){
 }
 
 unsigned nextinstructionlabel(){
-    return currInstructions;
+    return currInstruction;
 }
 
-void num_expand(){
+void expandNumberConstants(){
     assert(totalNumConsts == currNumConst);
-    double* p = (double*)malloc(EXPAND_SIZE * sizeof(double) + totalNumConsts * sizeof(double));
+
+    size_t newSize = (totalNumConsts + EXPAND_SIZE) * sizeof(double);
+    double* newMemory = (double*)malloc(newSize);
+    if(!newMemory){
+        fprintf(stderr, "Memory allocation failed for number constants expansion.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if(numConsts){
-        memcpy(p, numConsts, totalNumConsts * sizeof(double));
+        memcpy(newMemory, numConsts, totalNumConsts * sizeof(double));
         free(numConsts);
     }
-    numConsts = p;
+
+    numConsts = newMemory;
     totalNumConsts += EXPAND_SIZE;
 }
 
-void string_expand(){
+void expandStringConstants(){
     assert(totalStringConsts == currStringConst);
-    char** p = (char**)malloc(EXPAND_SIZE * sizeof + totalStringConsts * sizeof(char*));
+
+    size_t newSize = (totalStringConsts + EXPAND_SIZE) * sizeof(char*);
+    char** newMemory = (char**)malloc(newSize);
+    if(!newMemory){
+        fprintf(stderr, "Memory allocation failed for string constants expansion.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if(stringConsts){
-        memcpy(p, stringConsts, totalStringConsts * sizeof(char*));
+        memcpy(newMemory, stringConsts, totalStringConsts * sizeof(char*));
         free(stringConsts);
     }
-    stringConsts = p;
+
+    stringConsts = newMemory;
     totalStringConsts += EXPAND_SIZE;
 }
 
-void userfunc_expand(){
-    assert(totalUserFuncs == currUserfunct);
-    userfunc* p = (userfunc*)malloc(EXPAND_SIZE * sizeof(userfunc) + totalUserFuncs * sizeof(userfunc));
+void expandUserFunctions(){
+    assert(totalUserFuncs == currUserfunc);
+
+    size_t newSize = (totalUserFuncs + EXPAND_SIZE) * sizeof(userfunc);
+    userfunc* newMemory = (userfunc*)malloc(newSize);
+    if(!newMemory){
+        fprintf(stderr, "Memory allocation failed for user functions expansion.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if(userFuncs){
-        memcpy(p, userFuncs, totalUserFuncs * sizeof(userfunc));
+        memcpy(newMemory, userFuncs, totalUserFuncs * sizeof(userfunc));
         free(userFuncs);
     }
-    userFuncs = p;
+
+    userFuncs = newMemory;
     totalUserFuncs += EXPAND_SIZE;
 }
 
-void libfunc_expand(){
-    assert(totalNameLibfuncs == currLibfunct);
-    char** p = (char**)malloc(EXPAND_SIZE * sizeof(char*) + totalNameLibfuncs * sizeof(char*));
+void expandLibraryFunctions(){
+    assert(totalNameLibfuncs == currLibfunc);
+
+    size_t newSize = (totalNameLibfuncs + EXPAND_SIZE) * sizeof(char*);
+    char** newMemory = (char**)malloc(newSize);
+    if(!newMemory){
+        fprintf(stderr, "Memory allocation failed for library functions expansion.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if(namedLibfuncs){
-        memcpy(p, namedLibfuncs, totalNameLibfuncs * sizeof(char*));
+        memcpy(newMemory, namedLibfuncs, totalNameLibfuncs * sizeof(char*));
         free(namedLibfuncs);
     }
-    namedLibfuncs = p;
+
+    namedLibfuncs = newMemory;
     totalNameLibfuncs += EXPAND_SIZE;
 }
 
-void instruction_expand(){
-    assert(totalInstructions == currInstructions);
-    instruction* p = (instruction*)malloc(EXPAND_SIZE * sizeof(instruction) + totalInstructions * sizeof(instruction));
+void expandInstructions(){
+    assert(totalInstructions == currInstruction);
+
+    size_t newSize = (totalInstructions + EXPAND_SIZE) * sizeof(instruction);
+    instruction* newMemory = (instruction*)malloc(newSize);
+    if(!newMemory){
+        fprintf(stderr, "Memory allocation failed for instructions expansion.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if(instructions){
-        memcpy(p, instructions, totalInstructions * sizeof(instruction));
+        memcpy(newMemory, instructions, totalInstructions * sizeof(instruction));
         free(instructions);
     }
-    instructions = p;
+
+    instructions = newMemory;
     totalInstructions += EXPAND_SIZE;
 }
 
 void emitInstruction(instruction* temp){
-    if(currInstructions == totalInstructions){
-        instruction_expand();
+    if(currInstruction == totalInstructions){
+        expandInstructions();
     }
 
-    instruction* i = instructions + currInstructions++;
-
-    i->opcode = temp->opcode;
-    i->result = temp->result;
-    i->arg1 = temp->arg1;
-    i->arg2 = temp->arg2;
-    i->srcLine = temp->srcLine;
+    instruction* newInstruction = &instructions[currInstruction++];
+    *newInstruction = *temp;
 }
 
-void reset_operand(vmarg* arg){
+void resetOperand(vmarg* arg){
     arg = NULL;
 }
 
-void printInstructionDetails(int index, instruction instr) {
+void printInstructionDetails(int index, instruction instr){
     char* opcodeNames[] = {
     "assign", "add", "sub", "mul", "div_", "mod", "uminus", "and",
     "or", "not", "if_eq", "if_noteq", "if_lesseq", "if_greatereq", "if_less", 
@@ -712,7 +735,7 @@ void printInstructionDetails(int index, instruction instr) {
 
     }else{
         printf("| Arg1: Type %d Value %d", instr.arg1.type, instr.arg1.val);
-        switch (instr.arg1.type) {
+        switch (instr.arg1.type){
             case number_a:
                 printf(" Number: %d", (int)numConsts[instructions[index].arg1.val]);
                 break;
@@ -730,12 +753,11 @@ void printInstructionDetails(int index, instruction instr) {
         }
     }
 
-
-    if (instr.opcode == add_v || instr.opcode == sub_v || instr.opcode == mul_v || instr.opcode == div_v || instr.opcode == mod_v ||
+    if(instr.opcode == add_v || instr.opcode == sub_v || instr.opcode == mul_v || instr.opcode == div_v || instr.opcode == mod_v ||
         instr.opcode == jeq_v || instr.opcode == jne_v || instr.opcode == jle_v || instr.opcode == jge_v || instr.opcode == jlt_v ||
-        instr.opcode == jgt_v || instr.opcode == tablegetelem_v || instr.opcode == tablesetelem_v) {
+        instr.opcode == jgt_v || instr.opcode == tablegetelem_v || instr.opcode == tablesetelem_v){
         printf(" | Arg2: Type %d Value %d\n", instr.arg2.type, instr.arg2.val);
-        switch (instr.arg2.type) {
+        switch (instr.arg2.type){
             case number_a:
                 printf(" Number: %d", (int)numConsts[instructions[index].arg2.val]);
                 break;
@@ -755,10 +777,10 @@ void printInstructionDetails(int index, instruction instr) {
     printf("\n");
 }
 
-void printInstructions() {
+void printInstructions(){
     int nextInstructionCount = nextinstructionlabel(); 
     printf("\nInstruction Details:\n\n");
-    for (int i = 0; i < nextInstructionCount; i++) {
+    for (int i = 0; i < nextInstructionCount; i++){
         printInstructionDetails(i, instructions[i]);
     }
 }   

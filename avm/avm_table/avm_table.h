@@ -3,7 +3,7 @@
 
 #define AVM_TABLE_HASHSIZE 211
 
-#include "avm.h"
+#include "../avm.h"
 
 typedef struct avm_table avm_table;
 typedef struct avm_memcell avm_memcell;
@@ -32,5 +32,7 @@ avm_memcell* avm_tablegetelem(avm_table* table, avm_memcell* key);
 void avm_tabledestroy(avm_table* t);
 
 char* avm_getable(avm_table* table);
+
+unsigned table_getTotal(avm_table* table);
 
 #endif

@@ -4,7 +4,7 @@
     #include <stdio.h>
 	#include <stdlib.h>
     #include "alpha.h"
-    #include "parse.h"
+    #include "../bison/parse.h"
 
     unsigned int numToken = 0;
 
@@ -15,7 +15,7 @@
 
 %option yylineno
 %option noyywrap
-%option header-file="alpha_lex.h"
+%option header-file="lex/alpha_lex.h"
 
 IF 					"if"
 ELSE 				"else"

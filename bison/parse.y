@@ -1,9 +1,9 @@
 %{
-#include "alpha.h"
-#include "alpha_lex.h"
-#include "symTable.h"
-#include "quad.h"
-#include "vm.h"
+#include "../lex/alpha.h"
+#include "../lex/alpha_lex.h"
+#include "symbolTable/symTable.h"
+#include "quads/quad.h"
+#include "instructions/vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 

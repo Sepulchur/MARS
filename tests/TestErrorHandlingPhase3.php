@@ -40,7 +40,7 @@ class ErrorTest extends TestCase {
 function getParserOutput($filename) {
     $filePath = "phase3/" . $filename; 
     $escapedFilePath = escapeshellarg($filePath); 
-    $command = "./parser <" . $escapedFilePath;
+    $command = "./../parser <" . $escapedFilePath;
 
     exec($command, $output, $returnVar);
 

@@ -1,7 +1,7 @@
 #ifndef quad_h
 #define quad_h
 
-#include "symTable.h"
+#include "../symbolTable/symTable.h"
 #include <stdbool.h>
 #include <stdio.h>
 

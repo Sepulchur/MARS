@@ -1,7 +1,7 @@
 #ifndef _LIBFUNC_H_
 #define _LIBFUNC_H_
 
-#include "avm.h"
+#include "../avm.h"
 
 #define F_ARRAY_SIZE 12
 

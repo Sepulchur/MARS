@@ -21,7 +21,7 @@ class ErrorTest extends TestCase {
 }
 
 function getParserOutput($filename) {
-    $command = "./parser <\"test 2014\"/" . escapeshellarg($filename);
+    $command = "./../parser <\"test 2014\"/" . escapeshellarg($filename);
 
     exec($command, $output, $returnVar);
 
