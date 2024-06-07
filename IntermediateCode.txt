@@ -1,7 +1,11 @@
 
 ----------Intermediate code----------
-1: ADD _t0 x y [line 1]
-2: MUL _t0 z w [line 2]
-3: SUB _t0 t s [line 3]
-4: DIV _t0 u v [line 4]
-5: MOD _t0 r l [line 5]
+1: ADD _t0 2.000000 3.000000 [line 1]
+2: ASSIGN x _t0 [line 1]
+3: ASSIGN _t1 x [line 1]
+4: SUB _t0 x 2.000000 [line 2]
+5: ASSIGN y _t0 [line 2]
+6: ASSIGN _t1 y [line 2]
+7: MUL _t0 x y [line 3]
+8: ASSIGN z _t0 [line 3]
+9: ASSIGN _t1 z [line 3]
