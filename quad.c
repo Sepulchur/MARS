@@ -154,7 +154,7 @@ SymbolTableEntry_t *newtemp(HashTable *table, symbol_t sym){/*DANGER!!*/
         else if(sym == library_func_s)
             t = H_Insert(&table, create_entry(0, LIBFUNC, createPassport(name, 0), 0));
     }
-    
+
     return t;
 }
 
@@ -201,6 +201,10 @@ void resetformalargsoffset(void){
 }
 
 void resetfunctionlocalsoffset(void){
+    functionLocalOffset = 0;
+}
+
+void resetprogramvaroffset(void){
     functionLocalOffset = 0;
 }
 
@@ -501,34 +505,6 @@ const char *opcodeToString(iopcode op){
     }
 }
 
-int string_to_int(const char *str) {
-    // Initialize result to 0
-    int result = 0;
-
-    // Check if the string is empty
-    if (str == NULL || *str == '\0') {
-        fprintf(stderr, "Error: Empty string\n");
-    }
-
-    // Iterate through each character of the string
-    while (*str) {
-        // Check if the current character is a digit
-        if (*str >= '0' && *str <= '9') {
-            // Multiply the result by 10 and add the value of the current digit
-            result = result * 10 + (*str - '0');
-        } else {
-            // If the current character is not a digit, print an error and exit
-            return result ; 
-        }
-        // Move to the next character
-        str++;
-    }
-
-    return result;
-}
-
-
-
 char *exprToString(expr *e){
     if(!e) 
         return "";
@@ -601,7 +577,7 @@ void printQuad(FILE *f, int index) {
             NIKOS = 1;
             result = exprToString(quads[index].result); 
             fprintf(f, " %d", (int)(quads[index].label +1)); 
-            quads[index].label = quads[index].label +1;
+            quads[index].result->numConst = quads[index].label +1;
             free(result);
         }
     } 
@@ -625,7 +601,6 @@ void printQuad(FILE *f, int index) {
             NIKOS = 1;           
             result = exprToString(quads[index].result);
             fprintf(f, " %s", result);
-            quads[index].label = string_to_int(result);
             free(result);
         }
     }
@@ -643,4 +618,6 @@ void printQuads(FILE *f){
     }
 
 }
+ 
+
  

@@ -3,21 +3,57 @@
 
 #include "quad.h"
 #include <stdbool.h>
+#include <stdio.h>
+
+#define AVM_TABLE_HASHSIZE 211
+#define AVM_STACKSIZE  4096
+#define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m))
+#define AVM_STACKENV_SIZE 4
+#define AVM_MAX_INSTRUCTIONS (unsigned) nop_v
+#define AVM_NUMACTUALS_OFFSET   +4
+#define AVM_SAVEDPC_OFFSET      +3
+#define AVM_SAVEDTOP_OFFSET     +2
+#define AVM_SAVEDTOPSP_OFFSET   +1
+
+#define execute_add execute_arithmetic
+#define execute_sub execute_arithmetic
+#define execute_mul execute_arithmetic
+#define execute_div execute_arithmetic
+#define execute_mod execute_arithmetic
+/* #define execute_jle execute_relational
+#define execute_jge execute_relational
+#define execute_jlt execute_relational
+#define execute_jgt execute_relational */
+
 
 typedef enum vmopcode {
-    assign_v,   add_v,    sub_v,
-    mul_v,      div_v,    mod_v,
-    uminus_v,   and_v,    or_v,
-    not_v,      jeq_v,    jne_v,
-    jle_v,      jge_v,    jlt_v,    
-    jgt_v,      call_v,   pusharg_v,
-    nop_v,      jump_v,
-
-    funcenter_v,          
+    assign_v,
+    add_v,
+    sub_v,
+    mul_v,
+    div_v,
+    mod_v,
+    uminus_v,
+    and_v,
+    or_v,
+    not_v,
+    jeq_v,
+    jne_v,
+    jle_v,
+    jge_v,
+    jlt_v,
+    jgt_v,
+    call_v,                         
+    pusharg_v,
+    ret_v,
+    getret_v,
+    funcenter_v,
     funcexit_v,
-    newtable_v, 
+    newtable_v,
     tablegetelem_v,
-    tablesetelem_v      
+    tablesetelem_v,
+    jump_v,
+    nop_v
 } vmopcode;
 
 typedef enum vmarg_t {
@@ -54,7 +90,7 @@ typedef struct userfunc {
     const char*    id;
 } userfunc;
 
-enum avm_memcell_t {
+typedef enum avm_memcell_t {
     number_m   = 0,
     string_m   = 1,
     bool_m     = 2,
@@ -63,7 +99,7 @@ enum avm_memcell_t {
     libfunc_m  = 5,
     nil_m      = 6,
     undef_m    = 7
-};
+} avm_memcell_t;
 
 typedef struct avm_memcell {
     avm_memcell_t type;
@@ -71,14 +107,24 @@ typedef struct avm_memcell {
         double          numVal;
         char*           strVal;
         unsigned char   boolVal;
-        avm_table*      tableVal;
+        struct avm_table* tableVal;  // Forward declaration
         unsigned        funcVal;
         char*           libfuncVal;
     } data;
 } avm_memcell;
 
-#define AVM_STACKSIZE  4096
-#define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m))
+typedef struct avm_table_bucket {
+    avm_memcell         key;
+    avm_memcell         value;
+    struct avm_table_bucket* next;  // Use 'struct' keyword for self-referential struct
+} avm_table_bucket;
+
+typedef struct avm_table {
+    unsigned          refCounter;
+    avm_table_bucket* strIndexed[AVM_TABLE_HASHSIZE];
+    avm_table_bucket* numIndexed[AVM_TABLE_HASHSIZE];
+    unsigned          total;
+} avm_table;
 
 typedef struct stackFunc {
     unsigned    top;
@@ -95,41 +141,6 @@ void pushf(stackFunc *s, SymbolTableEntry_t *sym);
 SymbolTableEntry_t* topf(stackFunc* s);
 
 SymbolTableEntry_t* popf(stackFunc *s);
-
-static void avm_initstack(void);
-
-avm_table* avm_tablenew(void);
-
-void avm_tabledestroy(avm_table* t);
-
-avm_memcell* avm_tablegetelem(avm_table* t, avm_memcell* key);
-
-void avm_tablesetelem(avm_table* t, avm_memcell* key, avm_memcell* value);
-
-#define AVM_TABLE_HASHSIZE 211
-
-typedef struct avm_table_bucket {
-    avm_memcell         key;
-    avm_memcell         value;
-    avm_table_bucket*   next;
-} avm_table_bucket;
-
-typedef struct avm_table {
-    unsigned          refCounter;
-    avm_table_bucket* strIndexed[AVM_TABLE_HASHSIZE];
-    avm_table_bucket* numIndexed[AVM_TABLE_HASHSIZE];
-    unsigned          total;
-} avm_table;
-
-void avm_tableincrefcounter(avm_table* t);
-
-void avm_tabledecrefcounter(avm_table* t);
-
-void avm_tablebucketsinit(avm_table_bucket** p);
-
-void avm_memcellclear(avm_memcell* m);
-
-void avm_tablebucketdestroy(avm_table_bucket** p);
 
 unsigned consts_newstring(char* s);
 
@@ -198,6 +209,8 @@ void generate_RETURN(quad* q);
 
 void generate_FUNCEND(quad* q);
 
+void generate_UMINUS(quad* q);
+
 void generate_all(void);
 
 unsigned nextinstructionlabel();
@@ -219,5 +232,8 @@ void reset_operand(vmarg* arg);
 void printInstructionDetails(int index, instruction instr);
 
 void printInstructions();
+
+static void avm_initstack(void);
+
 
 #endif

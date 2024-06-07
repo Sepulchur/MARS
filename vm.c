@@ -15,6 +15,7 @@ char** namedLibfuncs;
 unsigned currLibfunct = 0;
 extern unsigned currQuad ; 
 extern quad* quads;
+unsigned counter = 0 ;
 
 unsigned currUserfunct = 0;
 
@@ -31,6 +32,8 @@ unsigned  totalStringConsts = 0;
 double*   numConsts;
 char**    stringConsts;
 userfunc* userFuncs;
+
+
 
 avm_memcell stack[AVM_STACKSIZE];
 
@@ -203,7 +206,7 @@ void make_operand(expr* e, vmarg* arg){
             }
             case boolexpr_e:{
                 if(e->sym->passport.name[0] == '_'){
-                    arg->type = global_a;
+                    arg->type=global_a;
                     arg->val = e->sym->offset;               
                 }
                 break;
@@ -264,22 +267,22 @@ void make_operand(expr* e, vmarg* arg){
                 break;
             }
             case programfunc_e:{
-                /* arg->type = userfunc_a;
+                arg->type = userfunc_a;
                 if(fstart_flag){
-                    e->sym->taddress = nextinstructionlabel();
+                    e->sym->address = nextinstructionlabel();
                     arg->val = userfuncts_newfunc(e->sym);
                     fstart_flag = 0;
                 }else{
                     int i;
                     for(i = currUserfunct; i>=0; i--){
-                        if((fcounter - userFuncs[i].saved_index < 2) && userFuncs[i].id == e->sym->name){
+                        if((fcounter - userFuncs[i].saved_index < 2) && userFuncs[i].id == e->sym->passport.name){
                             arg->val = i;
                             break;
                         }
                     }
                 }
 
-                break; */
+                break; 
             }
             case libraryfunc_e:{
                 arg->type = libfunc_a;
@@ -325,6 +328,7 @@ void add_incomplete_jump(unsigned instrNo, unsigned iaddress) {
 
 void patch_incomplete_jumps() {
     incomplete_jump* ij = ij_head;
+    printf("%d " , ij->instrNo);
     while(ij != NULL){
         if(ij->iaddress == nextquadlabel()){
             instructions[ij->instrNo].result.val = nextinstructionlabel(); 
@@ -333,16 +337,17 @@ void patch_incomplete_jumps() {
             instructions[ij->instrNo].result.val = quads[ij->iaddress].taddress;
         }
         ij = ij->next;
-    } 
+    }  
 }
 
 void generate(vmopcode op, quad* q) {
     instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = op;
 
+    make_operand(q->result, &(t->result));
     make_operand(q->arg1, &(t->arg1));
     make_operand(q->arg2, &(t->arg2));
-    make_operand(q->result, &(t->result));
+
     t->srcLine = q->line;
     q->taddress = nextinstructionlabel();
 
@@ -365,29 +370,18 @@ void generate_NOP(quad* q) {
 }
 
 void generate_relational(vmopcode op, quad *q){
-    instruction *t = (instruction*)malloc(sizeof(instruction));
-    
-    make_operand(q->arg1, &t->arg1);
-    make_operand(q->arg2, &t->arg2);
-
+    instruction* t = (instruction*)malloc(sizeof(instruction));
     t->opcode = op;
-    t->srcLine = q->line;
+    make_operand(q->arg1, &(t->arg1));
+    make_operand(q->arg2, &(t->arg2));
+
     t->result.type = label_a;
-    t->result.val = q->label;
-
-    if(op != 25){
-        t->arg1.val = q->arg1->numConst;
-        //t->arg1.type = q->arg1->type;
-        //t->arg2.type = q->arg2->type;
-        t->arg2.type = q->arg2->numConst;
+    if (q->result->numConst < q->label) {
+        t->result.val = quads[q->label].result->numConst; /* ???t->result.val = quads[q->label].taddress;?? To taddress exei to rolo tou result numconst se jumps (target adress) */
+    } else {
+        add_incomplete_jump(nextinstructionlabel(), q->label);
     }
-    else{
-        t->arg1.type = nil_a;
-        t->arg2.type = nil_a;
-    }
-
     q->taddress = nextinstructionlabel();
-    
     emitInstruction(t);
 }
 
@@ -621,6 +615,10 @@ void generate_all(void){
 
     for(i = 0; i < nextquadlabel(); ++i){ 
         (*generators[quads[i].op])(quads + i);
+        counter ++;
+    }
+    if(ij_head!= NULL){
+        patch_incomplete_jumps();
     }
 }
 
@@ -701,125 +699,60 @@ void reset_operand(vmarg* arg){
     arg = NULL;
 }
 
-void printInstructions() {
-    printf("\n");
-    int i = 0;
-    for (i = 0; i < nextinstructionlabel(); i++) {
-        switch (instructions[i].opcode) {
-            case assign_v:
-                if(instructions[i].arg1.type == number_a){
-                    printf("%d | assign | %d %d | %d %d:%d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, (int)numConsts[instructions[i].arg1.val]);
-                }else if(instructions[i].arg1.type == string_a){
-                    printf("%d | assign | %d %d | %d %d:\"%s\"\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, stringConsts[instructions[i].arg1.val]);
-                }else if(instructions[i].arg1.type == userfunc_a){
-                    printf("%d | assign | %d %d | %d %d:%s\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, userFuncs[instructions[i].arg1.val].id);
-                }else if(instructions[i].arg1.type == libfunc_a){
-                    printf("%d | assign | %d %d | %d %d:%s\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, namedLibfuncs[instructions[i].arg1.val]);
-                }else if(instructions[i].arg1.type == retval_a){
-                    printf("%d | assign | %d %d | %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type);
-                }else{
-                    printf("%d | assign | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val);                   
-                }
-                break;
-            case add_v:
-                printf("%d | add | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-              
-                break;
-            case sub_v:
-                printf("%d | sub | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case mul_v:
-                printf("%d | mul | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case div_v:
-                printf("%d | div | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case mod_v:
-                printf("%d | mod | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jeq_v:
-                printf("%d | if_eq | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jne_v:
-                printf("%d | if_noteq | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jle_v:
-                printf("%d | if_lesseq | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jge_v:
-                printf("%d | if_greatereq | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jlt_v:
-                printf("%d | if_less | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case jgt_v:
-                printf("%d | if_greater | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case call_v:
-                printf("%d | callfunc | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            case pusharg_v:
-                 printf("%d | pusharg | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            case funcenter_v:
-                printf("%d | enterfunc | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            case funcexit_v:
-                printf("%d | exitfunc | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            case newtable_v:
-                printf("%d | tablecreate | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            case tablegetelem_v:
-                printf("%d | tablegetelement | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case tablesetelem_v:
-                printf("%d | tablesetelement | %d %d | %d %d | %d %d\n", i, instructions[i].result.type, instructions[i].result.val, instructions[i].arg1.type, instructions[i].arg1.val, instructions[i].arg2.type, instructions[i].arg2.val);
-                break;
-            case nop_v:
-                printf("%d | nop \n", i);
-                break;
-            case jump_v:
-                printf("%d | jump | %d %d\n", i, instructions[i].result.type, instructions[i].result.val);
-                break;
-            default:
-                break;
-        }
-    }
-}  
-
-/* void printInstructionDetails(int index, instruction instr) {
+void printInstructionDetails(int index, instruction instr) {
     char* opcodeNames[] = {
     "assign", "add", "sub", "mul", "div_", "mod", "uminus", "and",
     "or", "not", "if_eq", "if_noteq", "if_lesseq", "if_greatereq", "if_less", 
     "if_greater", "call_", "param",  "ret", "getretval", "funcstart", "funcend",    
     "tablecreate", "tablegetelem", "tablesetelem", "jump","nop" };
-    printf("%d | %s | Result: Type %d Value %d | Arg1: Type %d Value %d", index+1, opcodeNames[instr.opcode], instr.result.type, instr.result.val, instr.arg1.type, instr.arg1.val);
+    printf("%d | %s | Result: Type %d Value %d ", index+1, opcodeNames[instr.opcode], instr.result.type, instr.result.val);
 
-    switch (instr.arg1.type) {
+    if(instr.opcode == ret_v || instr.opcode== jump_v ||
+    instr.opcode == funcenter_v || instr.opcode == funcexit_v ){
 
-        case number_a:
-            printf(" | Number: %f", numConsts[instr.arg1.val]);
-            break;
-        case string_a:
-            printf(" | String: \"%s\"", stringConsts[instr.arg1.val]);
-            break;
-        case userfunc_a:
-            printf(" | User Function: %s", userFuncs[instr.arg1.val].id);
-            break;
-        case libfunc_a:
-            printf(" | Library Function: %s", namedLibfuncs[instr.arg1.val]);
-            break;
-        default:
-            break;
+    }else{
+        printf("| Arg1: Type %d Value %d", instr.arg1.type, instr.arg1.val);
+        switch (instr.arg1.type) {
+            case number_a:
+                printf(" Number: %d", (int)numConsts[instructions[index].arg1.val]);
+                break;
+            case string_a:
+                printf(" | String: \"%s\"", stringConsts[instr.arg1.val]);
+                break;
+            case userfunc_a:
+                printf(" | User Function: %s", userFuncs[instructions[index].arg1.val].id);
+                break;
+            case libfunc_a:
+                printf(" | Library Function: %s", namedLibfuncs[instructions[index].arg1.val]);
+                break;
+            default:
+                break;
+        }
     }
+
 
     if (instr.opcode == add_v || instr.opcode == sub_v || instr.opcode == mul_v || instr.opcode == div_v || instr.opcode == mod_v ||
         instr.opcode == jeq_v || instr.opcode == jne_v || instr.opcode == jle_v || instr.opcode == jge_v || instr.opcode == jlt_v ||
         instr.opcode == jgt_v || instr.opcode == tablegetelem_v || instr.opcode == tablesetelem_v) {
         printf(" | Arg2: Type %d Value %d\n", instr.arg2.type, instr.arg2.val);
+        switch (instr.arg2.type) {
+            case number_a:
+                printf(" Number: %d", (int)numConsts[instructions[index].arg2.val]);
+                break;
+            case string_a:
+                printf(" | String: \"%s\"", stringConsts[instr.arg2.val]);
+                break;
+            case userfunc_a:
+                printf(" | User Function: %s", userFuncs[instructions[index].arg2.val].id);
+                break;
+            case libfunc_a:
+                printf(" | Library Function: %s", namedLibfuncs[instructions[index].arg2.val]);
+                break;
+            default:
+                break;
+        }
     }
-        printf("\n");
+    printf("\n");
 }
 
 void printInstructions() {
@@ -828,5 +761,4 @@ void printInstructions() {
     for (int i = 0; i < nextInstructionCount; i++) {
         printInstructionDetails(i, instructions[i]);
     }
-}   */
-
+}   
