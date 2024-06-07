@@ -288,6 +288,9 @@ void resetformalargsoffset(void);
  */
 void resetfunctionlocalsoffset(void);
 
+
+void resetprogramvaroffset(void);
+
 /*
  * Function: restorecurrscopeoffset
  * --------------------------------
