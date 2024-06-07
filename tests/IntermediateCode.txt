@@ -1,7 +1,0 @@
-
-----------Intermediate code----------
-1: ADD _t0 x y [line 1]
-2: MUL _t0 z w [line 2]
-3: SUB _t0 t s [line 3]
-4: DIV _t0 u v [line 4]
-5: MOD _t0 r l [line 5]

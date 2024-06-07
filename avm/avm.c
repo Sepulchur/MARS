@@ -1,6 +1,6 @@
 #include "avm.h"
 
-#define AMV_STACKENV_SIZE 4 //aaaaa
+#define AMV_ENV_SIZE 4
 
 const char* memcell_typeToString[] = {
 	"number", 
@@ -75,7 +75,7 @@ avm_memcell* avm_translate_operand(vmarg* arg, avm_memcell* reg){
         case number_a:{
             avm_memcellclear(reg);
             reg->type = number_m;
-            reg->data.numVal = number_array[arg->val];
+            reg->data.numVal = num_array[arg->val];
             return reg;
         }
         case string_a:{
@@ -207,7 +207,7 @@ unsigned avm_totalactuals(){
 
 avm_memcell* avm_getactual(unsigned i){
 	assert(i < avm_totalactuals());
-	return &stack[topsp + AMV_STACKENV_SIZE + 1 + i];
+	return &stack[topsp + AMV_ENV_SIZE + 1 + i];
 }
 
 void avm_error(char *format, ...) {

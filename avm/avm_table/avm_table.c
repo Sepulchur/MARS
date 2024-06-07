@@ -216,89 +216,9 @@ avm_memcell* avm_tablegetelem(avm_table* table, avm_memcell* key){
     return NULL;
 }
 
-char* avm_getable(avm_table* table){
-    avm_table_bucket* bucket;
-    char* buffer;
-    unsigned buffLen = 60, buffIndex = 0, newIndex, size, i, transferred_elems = 0;
-
-    assert(table);
-    
-    nest_stack_push(table);
-
-    
-    buffer = malloc(buffLen);
-    size = table->total;
-    strcpy(buffer, "[ ");
-    buffIndex = 2;
-
-    // Traverse strIndexed array
-    for(i = 0; i < AVM_TABLE_HASHSIZE; ++i){
-        bucket = table->strIndexed[i];
-        while (bucket){
-            char* k = avm_tostring(&bucket->key);
-            char* v = avm_tostring(&bucket->value);
-            newIndex = 9 + strlen(k) + strlen(v) + buffIndex;
-            if(newIndex >= buffLen){
-                buffLen = newIndex + 60;
-                buffer = realloc(buffer, buffLen);
-            }
-            strcat(buffer, "{ ");
-            strcat(buffer, k);
-            free(k);
-            strcat(buffer, " : ");
-            strcat(buffer, v);
-            free(v);
-
-            if(transferred_elems == size - 1){
-                buffIndex = newIndex - 1;
-                strcat(buffer, " } ");
-                break;
-            }
-            buffIndex = newIndex;
-            strcat(buffer, " }, ");
-            transferred_elems++;
-            bucket = bucket->next;
-        }
-    }
-
-    // Traverse numIndexed array
-    for (unsigned i = 0; i < AVM_TABLE_HASHSIZE; ++i){
-        bucket = table->numIndexed[i];
-        while (bucket){
-            char* k = avm_tostring(&bucket->key);
-            char* v = avm_tostring(&bucket->value);
-            newIndex = 9 + strlen(k) + strlen(v) + buffIndex;
-            if(newIndex >= buffLen){
-                buffLen = newIndex + 60;
-                buffer = realloc(buffer, buffLen);
-            }
-            strcat(buffer, "{ ");
-            strcat(buffer, k);
-            free(k);
-            strcat(buffer, " : ");
-            strcat(buffer, v);
-            free(v);
-
-            if(transferred_elems == size - 1){
-                buffIndex = newIndex - 1;
-                strcat(buffer, " } ");
-                break;
-            }
-            buffIndex = newIndex;
-            strcat(buffer, " }, ");
-            transferred_elems++;
-            bucket = bucket->next;
-        }
-    }
-
-    buffIndex++;
-    strcat(buffer, "]");
-    assert(strlen(buffer) == buffIndex);
-    nest_stack_pop();
-    return buffer;
-}
-
 unsigned table_getTotal(avm_table* table){
 	assert(table);
 	return table->total;
 }
+
+char* avm_getable(avm_table* table){}

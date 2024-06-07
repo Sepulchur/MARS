@@ -22,6 +22,7 @@ library_func_t executeLibFuncs[] = {
 
 void invalid_libfunc(char* id){
     avm_error("error: invalid library function: %s\n", id);
+	executionFinished = 1;
 }
 
 void libfunc_sqrt(char* id){
@@ -31,10 +32,12 @@ void libfunc_sqrt(char* id){
 
 	if(n != 1){
 		avm_error("error: library function 'sqrt' expected 1 argument but got %u.\n", n);
+		executionFinished = 1;
 		return;
 	}
 	if(arg->type != number_m){
 		avm_error("error: incompatible type for argument 1 of 'sqrt'.\n");
+		executionFinished = 1;
 		return;
 	}
 
@@ -55,10 +58,12 @@ void libfunc_sin(char* id){
 
 	if(n != 1){
 		avm_error("error: library function 'sin' expected 1 argument but got %u.\n", n);
+		executionFinished = 1;
 		return;
 	}
 	if(arg->type != number_m){
 		avm_error("error: incompatible type for argument 1 of 'sin'.\n");
+		executionFinished = 1;
 		return;
 	}
 
@@ -75,10 +80,12 @@ void libfunc_cos(char* id){
 
 	if(n != 1){
 		avm_error("error: library function 'cos' expected 1 argument but got %u.\n", n);
+		executionFinished = 1;
 		return;
 	}
 	if(arg->type != number_m){
 		avm_error("error: incompatible type for argument 1 of 'cos'.\n");
+		executionFinished = 1;
 		return;
 	}
 
@@ -93,6 +100,7 @@ void libfunc_typeof(char* id){
 
 	if(n != 1){
 		avm_error("error: library function 'typeof' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
 		return;
 	}
 
@@ -110,11 +118,13 @@ void libfunc_strtonum(char* id){
 
 	if(n != 1){
 		avm_error("error: library function 'strtonum' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
 		return;
 	}
 	
 	if(arg->type != string_m){
 		avm_error("error: incompatible type for argument 1 of 'strtonum'.\n");
+		executionFinished = 1;
 		return;
 	}
 
@@ -144,6 +154,7 @@ void libfunc_argument(char* id){
 	n = avm_totalactuals();
 	if(n != 1){
 		avm_error("error: library function 'argument' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
 		return;
 	}
 
@@ -151,6 +162,7 @@ void libfunc_argument(char* id){
 	arg = avm_getactual(0); 
 	if(arg->type != number_m){
 		avm_error("error: incompatible type for argument 1 of 'argument'.\n");
+		executionFinished = 1;
 		return;
 	}
 
@@ -171,21 +183,46 @@ void libfunc_totalarguments(char* id){
 }
 
 void libfunc_objectcopy(char* id){
+	avm_table_bucket* temp;
+	avm_table* t, *t_new;
 	avm_memcell* arg;
-	unsigned n = avm_totalactuals();
+	unsigned i, n = avm_totalactuals();
 	if(n != 1){
 		avm_error("error: library function 'objectcopy' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
+		return;
 	}
 
 	arg = avm_getactual(0);
 	if(arg->type != table_m){
 		avm_error("error: incompatible type for argument 1 of 'objectcopy'.\n");
+		executionFinished = 1;
+		return;
 	}
+
+	t = arg->data.tableVal;
+	t_new = avm_tablenew();
 
 	avm_memcellclear(&retval);
 
+	for(i = 0; i < AVM_TABLE_HASHSIZE; i++){
+
+        temp = t->strIndexed[i];
+        while (temp != NULL) {
+            avm_tablesetelem(t_new, &temp->key, avm_tablegetelem(t, &temp->key));
+            temp = temp->next;
+        }
+
+        temp = t->numIndexed[i];
+        while (temp != NULL) {
+            avm_tablesetelem(t_new, &temp->key, avm_tablegetelem(t, &temp->key));
+            temp = temp->next;
+        }
+
+    }
+
 	retval.type = table_m;
-	retval.data.tableVal = Atable_copyObj(arg->data.tableVal);
+	retval.data.tableVal = t_new;
 	avm_tableincrefcounter(retval.data.tableVal);
 }
 
@@ -193,12 +230,16 @@ void libfunc_objecttotalmembers(char* id){
 	avm_memcell* arg;
 	unsigned n = avm_totalactuals();
 	if(n != 1){
-		avm_error("error: library function 'objecttotalmembers' expected 1 argument but got %u\n", n);		
+		avm_error("error: library function 'objecttotalmembers' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
+		return;		
 	}
 
 	arg = avm_getactual(0);
 	if(arg->type != table_m){
 		avm_error("error: incompatible type for argument 1 of 'objecttotalmembers'.\n");
+		executionFinished = 1;
+		return;
 	}
 
 	avm_memcellclear(&retval);
@@ -208,24 +249,65 @@ void libfunc_objecttotalmembers(char* id){
 }
 
 void libfunc_objectmemberkeys(char* id){
+	avm_table_bucket* temp, *new_bucket; 
 	avm_memcell* arg;
+	avm_table* t, *t_new;
+	avm_memcell new_key;
+    unsigned i, z, t_size;
 	unsigned n = avm_totalactuals();
 	if(n != 1){
-		avm_error("error: library function 'objectmemberkeys' expected 1 argument but got %u\n", n);		
+		avm_error("error: library function 'objectmemberkeys' expected 1 argument but got %u\n", n);
+		executionFinished = 1;
+		return;		
 	}
 
 	arg = avm_getactual(0);
 	if(arg->type != table_m){
 		avm_error("error: incompatible type for argument 1 of 'objectmemberkeys'.\n");
+		executionFinished = 1;
+		return;
 	}
+
+	t = arg->data.tableVal;
+	t_new = avm_tablenew();
+	t_size = t->total;
 
 	avm_memcellclear(&retval);
 
+	for (i = 0; i < AVM_TABLE_HASHSIZE; i++) {
+
+        temp = t->strIndexed[i];
+        while (temp != NULL) {
+            new_key.data.numVal = z;
+            new_bucket = (avm_table_bucket*)malloc(sizeof(avm_table_bucket));
+            new_bucket->key = new_key;
+            new_bucket->value = temp->key;
+            new_bucket->next = t_new->strIndexed[z];
+            t_new->numIndexed[z] = new_bucket;
+            t_new->total++;
+            z++;
+            temp = temp->next;
+        }
+
+        temp = t->numIndexed[i];
+        while (temp != NULL) {
+            new_key.data.numVal = z;
+            new_bucket = (avm_table_bucket*)malloc(sizeof(avm_table_bucket));
+            new_bucket->key = new_key;
+            new_bucket->value = temp->key;
+            new_bucket->next = t_new->numIndexed[z];
+            t_new->numIndexed[z] = new_bucket;
+            t_new->total++;
+            z++;
+            temp = temp->next;
+        }
+
+    }
+    
 	retval.type = table_m;
-	retval.data.tableVal = Atable_copy_memberkeys(arg->data.tableVal);
+	retval.data.tableVal = t_new;
 	avm_tableincrefcounter(retval.data.tableVal);
 }
-
 
 void libfunc_print(char* id){
 	unsigned i;
@@ -240,6 +322,13 @@ void libfunc_print(char* id){
     avm_memcellclear(&retval);
     retval.type = number_m;
     retval.data.numVal = n;
+}
+
+static inline bool isNumber(char c){
+	if(c >= '0' && c <= '9'){
+		return 1;
+    }
+	return 0;
 }
 
 void libfunc_input(char* id){
@@ -286,7 +375,7 @@ void libfunc_input(char* id){
 
     if(len - index <= 16){
         periodIndex;
-        while(isdigit(line[index])){
+        while(isNumber(line[index])){
             index++;
         }
 
@@ -299,7 +388,7 @@ void libfunc_input(char* id){
 
         if(line[index] == '.'){
             periodIndex = ++index;
-            while(isdigit(line[index])){
+            while(isNumber(line[index])){
                 index++;
             }
 

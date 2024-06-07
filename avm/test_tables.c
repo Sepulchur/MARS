@@ -7,7 +7,7 @@ double* number_array;
 userfunc* userfunc_array;
 char** libfunc_array;
 instruction* instructions;
-// Utility function to create a number memcell
+
 avm_memcell* create_number_memcell(double num) {
     avm_memcell* cell = (avm_memcell*)malloc(sizeof(avm_memcell));
     cell->type = number_m;
@@ -15,7 +15,6 @@ avm_memcell* create_number_memcell(double num) {
     return cell;
 }
 
-// Utility function to create a string memcell
 avm_memcell* create_string_memcell(const char* str) {
     avm_memcell* cell = (avm_memcell*)malloc(sizeof(avm_memcell));
     cell->type = string_m;
@@ -23,7 +22,6 @@ avm_memcell* create_string_memcell(const char* str) {
     return cell;
 }
 
-// Utility function to print a memcell (for debugging)
 void print_memcell(avm_memcell* cell) {
     switch (cell->type) {
         case number_m:
@@ -43,11 +41,9 @@ void print_memcell(avm_memcell* cell) {
     }
 }
 
-// Test function for avm_tablesetelem and related operations
 void test_avm_tablesetelem() {
     avm_table* table = avm_tablenew();
 
-    // Create some keys and values
     avm_memcell* key1 = create_string_memcell("key1");
     avm_memcell* value1 = create_number_memcell(42);
 
@@ -57,12 +53,10 @@ void test_avm_tablesetelem() {
     avm_memcell* key3 = create_string_memcell("key3");
     avm_memcell* value3 = create_number_memcell(84);
 
-    // Insert elements into the table
     avm_tablesetelem(table, key1, value1);
     avm_tablesetelem(table, key2, value2);
     avm_tablesetelem(table, key3, value3);
 
-    // Verify elements are correctly inserted
     printf("Testing insertions...\n");
 
     avm_memcell* found_value1 = avm_tablegetelem(table, key1);
@@ -77,7 +71,6 @@ void test_avm_tablesetelem() {
     assert(found_value3 != NULL && found_value3->type == number_m && found_value3->data.numVal == 84);
     print_memcell(found_value3);
 
-    // Update an element
     avm_memcell* new_value1 = create_number_memcell(99);
     avm_tablesetelem(table, key1, new_value1);
 
@@ -86,7 +79,6 @@ void test_avm_tablesetelem() {
     assert(found_value1 != NULL && found_value1->type == number_m && found_value1->data.numVal == 99);
     print_memcell(found_value1);
 
-    // Delete an element
     avm_memcell* nil_value = (avm_memcell*)malloc(sizeof(avm_memcell));
     nil_value->type = nil_m;
     avm_tablesetelem(table, key1, nil_value);
@@ -95,7 +87,6 @@ void test_avm_tablesetelem() {
     found_value1 = avm_tablegetelem(table, key1);
     assert(found_value1 == NULL);
 
-    // Clean up
     avm_memcellclear(key1);
     avm_memcellclear(value1);
     avm_memcellclear(key2);
@@ -112,7 +103,6 @@ void test_avm_tablesetelem() {
 void test_avm_getable() {
     avm_table* table = avm_tablenew();
 
-    // Create some keys and values
     avm_memcell* key1 = create_string_memcell("key1");
     avm_memcell* value1 = create_number_memcell(42);
 
@@ -122,17 +112,14 @@ void test_avm_getable() {
     avm_memcell* key3 = create_string_memcell("key3");
     avm_memcell* value3 = create_number_memcell(84);
 
-    // Insert elements into the table
     avm_tablesetelem(table, key1, value1);
     avm_tablesetelem(table, key2, value2);
     avm_tablesetelem(table, key3, value3);
 
-    // Get table string representation
     char* table_str = avm_getable(table);
     printf("Table: %s\n", table_str);
     free(table_str);
 
-    // Clean up
     avm_memcellclear(key1);
     avm_memcellclear(value1);
     avm_memcellclear(key2);

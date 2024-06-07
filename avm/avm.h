@@ -9,6 +9,7 @@
 #define AVM_SAVEDPC_OFFSET      +3
 #define AVM_SAVEDTOP_OFFSET     +2
 #define AVM_SAVEDTOPSP_OFFSET   +1
+#define AVM_ENDING_PC 10000
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,15 +134,14 @@ extern unsigned glob_mem;
 extern unsigned pc;
 extern unsigned totalActuals;
 extern unsigned char executionFinished;
+extern const char*   memcell_typeToString[];
 
-//elenxos
-extern char** string_array;
-extern double* number_array;
+extern char**    string_array;
+extern double*   num_array;
 extern userfunc* userfunc_array;
-extern char** libfunc_array;
-extern unsigned userfuncs_a;
-extern const char* memcell_typeToString[];
-extern instruction* instructions; //tmp
+extern char**    libfunc_array;
+extern unsigned  userfuncs;
+extern instruction* instructions; 
 
 static void avm_initstack(unsigned globals_a);
 
